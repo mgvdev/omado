@@ -1,0 +1,15 @@
+[package]
+name = "omado-core"
+description = "Modèle, stockage et saisie intelligente d'Omado"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+
+[dependencies]
+chrono.workspace = true
+dirs.workspace = true
+rusqlite.workspace = true
+serde.workspace = true
+thiserror.workspace = true
+uuid.workspace = true

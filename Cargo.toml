@@ -1,0 +1,25 @@
+[workspace]
+resolver = "3"
+members = ["crates/omado-core"]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+license = "MIT"
+authors = ["Maxence Guyonvarho <maxence.guyonvarho@gmail.com>"]
+
+[workspace.dependencies]
+omado-core = { path = "crates/omado-core" }
+anyhow = "1"
+chrono = { version = "0.4", default-features = false, features = ["clock", "std", "serde"] }
+dirs = "6"
+rusqlite = { version = "0.37", features = ["chrono", "functions"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+thiserror = "2"
+toml = "0.9"
+uuid = { version = "1", features = ["v4", "serde"] }
+
+[profile.release]
+lto = "thin"
+strip = true
