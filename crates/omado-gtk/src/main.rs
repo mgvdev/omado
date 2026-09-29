@@ -3,6 +3,7 @@
 //! Une seule instance tourne : `omado-gtk --quick` lancé alors que l'app est
 //! ouverte ouvre la saisie rapide dans l'instance existante (D-Bus, via GApplication).
 
+mod anim;
 mod app;
 mod detail;
 mod quick;

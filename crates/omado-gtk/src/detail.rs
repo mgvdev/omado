@@ -12,6 +12,8 @@ use omado_core::{Due, List, NewTask, Priority, Store, Task, TaskId, now, parse};
 use relm4::gtk::{self, glib, prelude::*};
 use relm4::{ComponentParts, ComponentSender, RelmWidgetExt, SimpleComponent};
 
+use crate::anim;
+
 pub struct Detail {
     store: Rc<Store>,
     task: Option<Task>,
@@ -58,6 +60,7 @@ pub enum DetailOutput {
 /// Widgets à mettre à jour ; `filling` coupe les signaux pendant qu'on les remplit.
 #[derive(Clone)]
 struct DetailWidgets {
+    body: gtk::Box,
     title: gtk::Entry,
     schedule: gtk::Label,
     recurrence: gtk::Label,
@@ -318,6 +321,7 @@ impl SimpleComponent for Detail {
         body.append(&footer);
 
         let widgets = DetailWidgets {
+            body: body.clone(),
             title,
             schedule,
             recurrence,
@@ -358,6 +362,7 @@ impl SimpleComponent for Detail {
                 self.widgets.when.set_text("");
                 self.widgets.when_error.set_visible(false);
                 self.fill();
+                anim::replay(&self.widgets.body, "enter");
             }
             DetailMsg::Reload => {
                 if let Some(id) = self.task.as_ref().map(|t| t.id) {

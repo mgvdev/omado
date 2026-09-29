@@ -13,6 +13,7 @@ use std::path::PathBuf;
 use std::process::Command;
 use std::time::Duration;
 
+use omado_core::SpanKind;
 use relm4::gtk::{self, gdk, gio, glib, prelude::*};
 
 pub struct Palette {
@@ -156,6 +157,8 @@ impl Palette {
         let hairline = fg_rgb.a(0.08);
         let accent_soft = self.accent.a(0.18);
         let accent_sel = self.accent.a(0.35);
+        // Départ vif, arrivée douce : la courbe de toutes les micro-interactions.
+        let ease = "cubic-bezier(0.2, 0.8, 0.2, 1)";
         let r = self.radius.min(14);
         let rs = (self.radius / 2).min(8);
         let list_colors: String = ["red", "orange", "yellow", "green", "cyan", "blue", "magenta"]
@@ -191,7 +194,9 @@ label.dim, .dim {{ color: {muted}; }}
     box-shadow: none;
     color: {fg};
 }}
-.tile:hover {{ background: {hover}; }}
+.tile {{ transition: background-color 150ms ease-out, border-color 150ms ease-out, transform 160ms {ease}; }}
+.tile:hover {{ background: {hover}; transform: translateY(-1px); }}
+.tile:active {{ transform: scale(0.97); }}
 .tile.selected {{ background: {accent_soft}; border-color: {accent}; }}
 .tile .count {{ font-size: 1.5em; font-weight: bold; }}
 .tile .tile-label {{ font-weight: bold; color: {muted}; }}
@@ -203,7 +208,7 @@ label.dim, .dim {{ color: {muted}; }}
 .tile.completed image {{ color: {green}; }}
 
 list.nav {{ background: transparent; }}
-list.nav > row {{ border-radius: {rs}px; margin: 1px 8px; padding: 6px 8px; }}
+list.nav > row {{ border-radius: {rs}px; margin: 1px 8px; padding: 6px 8px; transition: background-color 150ms ease-out; }}
 list.nav > row:hover {{ background: {hover}; }}
 list.nav > row:selected {{ background: {selected}; color: {fg}; }}
 .dot {{ min-width: 10px; min-height: 10px; border-radius: 999px; background: {accent}; }}
@@ -220,8 +225,10 @@ entry, dropdown > button, button.flat-control, spinbutton {{
     color: {fg};
     outline: none;
 }}
+entry {{ transition: border-color 150ms ease-out, background-color 150ms ease-out; }}
 entry:focus-within {{ border-color: {accent}; }}
-button {{ border-radius: {rs}px; }}
+button {{ border-radius: {rs}px; transition: background-color 150ms ease-out, color 150ms ease-out, transform 120ms {ease}; }}
+button:active {{ transform: scale(0.96); }}
 button.flat, menubutton.flat > button {{ background: none; border: none; box-shadow: none; }}
 button.flat:hover, menubutton.flat > button:hover, button.flat-control:hover {{ background: {hover}; }}
 button.accent {{ background: {accent}; color: {bg}; border: none; }}
@@ -249,10 +256,14 @@ entry.quick-add {{ padding: 6px 10px; min-height: 34px; font-size: 1.05em; }}
 .chip.new {{ border-style: dashed; }}
 
 list.tasks {{ background: transparent; }}
-list.tasks > row {{ padding: 7px 10px; border-radius: {rs}px; margin: 0 6px; border-bottom: 1px solid {hairline}; }}
+list.tasks > row {{ padding: 0; border-radius: {rs}px; margin: 0 6px; transition: background-color 150ms ease-out; }}
 list.tasks > row:hover {{ background: {fill}; }}
 list.tasks > row:selected {{ background: {selected}; }}
-list.tasks > row.subtask {{ padding-left: 38px; }}
+.task-row {{ padding: 7px 10px; border-bottom: 1px solid {hairline}; border-radius: {rs}px; transition: opacity 220ms ease-out; }}
+list.tasks > row.subtask .task-row {{ padding-left: 38px; }}
+.task-row.completing {{ opacity: 0.45; }}
+.task-row.completing .task-title {{ color: {muted}; }}
+.task-row.fresh {{ animation: flash 1400ms ease-out; }}
 .section-header {{ font-weight: bold; color: {muted}; padding: 14px 16px 4px 16px; }}
 .section-header.overdue {{ color: {red}; }}
 .task-title.done {{ color: {muted}; }}
@@ -277,9 +288,14 @@ checkbutton.task-check check {{
 checkbutton.task-check.p1 check {{ border-color: {red}; background: {}; }}
 checkbutton.task-check.p2 check {{ border-color: {orange}; background: {}; }}
 checkbutton.task-check.p3 check {{ border-color: {blue}; background: {}; }}
-checkbutton.task-check check:checked {{ background: {accent}; border-color: {accent}; -gtk-icon-source: -gtk-icontheme("object-select-symbolic"); color: {bg}; }}
+checkbutton.task-check check {{ transition: background-color 180ms ease-out, border-color 180ms ease-out, color 180ms ease-out; }}
+checkbutton.task-check check:checked {{ background: {accent}; border-color: {accent}; -gtk-icon-source: -gtk-icontheme("object-select-symbolic"); color: {bg}; animation: pop 280ms {ease}; }}
 checkbutton.task-check:hover check {{ background: {hover}; }}
+/* Aperçu de la coche au survol, façon Todoist. */
+checkbutton.task-check:hover check:not(:checked) {{ -gtk-icon-source: -gtk-icontheme("object-select-symbolic"); color: {muted}; }}
 
+.empty-icon {{ -gtk-icon-size: 44px; color: {muted}; margin-bottom: 6px; }}
+.empty-icon.done {{ color: {green}; }}
 .empty-title {{ font-size: 1.3em; font-weight: bold; color: {muted}; }}
 .empty-sub {{ color: {muted}; }}
 
@@ -296,8 +312,36 @@ textview.notes {{ background: {fill}; color: {fg}; border: 1px solid {border}; b
 textview.notes text {{ background: transparent; color: {fg}; }}
 .footnote {{ font-size: 0.8em; color: {muted}; }}
 
-/* Barre d'annulation */
-.undo-bar {{ background: {raised}; border: 1px solid {border}; border-radius: {r}px; padding: 6px 6px 6px 14px; margin: 12px; }}
+/* Barre d'annulation, avec son compte à rebours */
+.undo-bar {{ background: {raised}; border: 1px solid {border}; border-radius: {r}px; padding: 6px 6px 4px 14px; margin: 12px; }}
+.undo-timer {{ min-height: 2px; background: {accent}; border-radius: 2px; margin: 2px 8px 0 0; transform-origin: 0 50%; opacity: 0.8; }}
+.undo-timer.countdown-a {{ animation: countdown-a 7s linear; }}
+.undo-timer.countdown-b {{ animation: countdown-b 7s linear; }}
+
+/* Saisie rapide */
+entry.quick-add.success {{ border-color: {green}; }}
+.quick-hint.success {{ color: {green}; }}
+.quick-body {{ animation: enter-a 200ms {ease}; }}
+
+/* Mouvement : rejouables en alternant les classes -a / -b (voir anim.rs) */
+@keyframes pop {{ 0% {{ transform: scale(0.55); }} 60% {{ transform: scale(1.2); }} 100% {{ transform: scale(1); }} }}
+@keyframes flash {{ from {{ background-color: {accent_soft}; }} to {{ background-color: transparent; }} }}
+@keyframes chip-in {{ from {{ opacity: 0; transform: scale(0.7); }} to {{ opacity: 1; transform: scale(1); }} }}
+@keyframes enter-a {{ from {{ opacity: 0; transform: translateY(8px); }} to {{ opacity: 1; transform: translateY(0); }} }}
+@keyframes enter-b {{ from {{ opacity: 0; transform: translateY(8px); }} to {{ opacity: 1; transform: translateY(0); }} }}
+@keyframes bump-a {{ 0% {{ transform: scale(1); }} 40% {{ transform: scale(1.35); }} 100% {{ transform: scale(1); }} }}
+@keyframes bump-b {{ 0% {{ transform: scale(1); }} 40% {{ transform: scale(1.35); }} 100% {{ transform: scale(1); }} }}
+@keyframes appear-a {{ from {{ opacity: 0; transform: translateY(12px) scale(0.96); }} to {{ opacity: 1; transform: translateY(0) scale(1); }} }}
+@keyframes appear-b {{ from {{ opacity: 0; transform: translateY(12px) scale(0.96); }} to {{ opacity: 1; transform: translateY(0) scale(1); }} }}
+@keyframes countdown-a {{ from {{ transform: scaleX(1); }} to {{ transform: scaleX(0); }} }}
+@keyframes countdown-b {{ from {{ transform: scaleX(1); }} to {{ transform: scaleX(0); }} }}
+.enter-a {{ animation: enter-a 220ms {ease}; }}
+.enter-b {{ animation: enter-b 220ms {ease}; }}
+.bump-a {{ animation: bump-a 340ms {ease}; }}
+.bump-b {{ animation: bump-b 340ms {ease}; }}
+.appear-a {{ animation: appear-a 360ms {ease}; }}
+.appear-b {{ animation: appear-b 360ms {ease}; }}
+.chip.pop {{ animation: chip-in 200ms {ease}; }}
 "#,
             self.red.a(0.08),
             self.orange.a(0.08),
@@ -314,7 +358,23 @@ fn hyprland_rounding() -> Option<u32> {
     digits.parse().ok()
 }
 
+/// Couleur (thème courant) d'un élément reconnu par la saisie rapide.
+pub fn span_rgb(kind: SpanKind) -> Option<(u8, u8, u8)> {
+    PALETTE.with_borrow(|p| {
+        let p = p.as_ref()?;
+        let c = match kind {
+            SpanKind::Date | SpanKind::Time => p.accent,
+            SpanKind::Recurrence => p.cyan,
+            SpanKind::List => p.blue,
+            SpanKind::Tag => p.magenta,
+            SpanKind::Priority => p.orange,
+        };
+        Some((c.0, c.1, c.2))
+    })
+}
+
 thread_local! {
+    static PALETTE: RefCell<Option<Palette>> = const { RefCell::new(None) };
     static PROVIDER: RefCell<Option<gtk::CssProvider>> = const { RefCell::new(None) };
     static MONITOR: RefCell<Option<gio::FileMonitor>> = const { RefCell::new(None) };
 }
@@ -363,4 +423,5 @@ fn apply() {
             p.load_from_string(&css);
         }
     });
+    PALETTE.set(Some(palette));
 }

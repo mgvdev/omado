@@ -11,7 +11,8 @@ use omado_core::{Store, now, parse};
 use relm4::gtk::{self, gdk, glib, prelude::*};
 use relm4::{ComponentParts, ComponentSender, SimpleComponent};
 
-use crate::rows::fill_chips;
+use crate::anim;
+use crate::rows::{fill_chips, highlight_entry};
 
 pub const QUICK_TITLE: &str = "Omado — Saisie rapide";
 
@@ -52,6 +53,7 @@ impl SimpleComponent for QuickAdd {
 
     fn init(store: Rc<Store>, window: gtk::Window, sender: ComponentSender<Self>) -> ComponentParts<Self> {
         let body = gtk::Box::new(gtk::Orientation::Vertical, 8);
+        body.add_css_class("quick-body");
         body.set_margin_top(14);
         body.set_margin_bottom(12);
         body.set_margin_start(14);
@@ -117,6 +119,11 @@ impl SimpleComponent for QuickAdd {
                 let parsed = parse(&text, now());
                 let store = &self.store;
                 fill_chips(&self.chips, &parsed, |name| store.find_list(name).ok().flatten().is_some(), now().date());
+                highlight_entry(&self.entry, &parsed);
+                if !text.is_empty() {
+                    self.entry.remove_css_class("success");
+                    self.status.remove_css_class("success");
+                }
             }
             QuickMsg::Submit { keep_open } => {
                 let text = self.entry.text().to_string();
@@ -126,9 +133,12 @@ impl SimpleComponent for QuickAdd {
                         let when = task.due.map(|d| format!(" · {}", due_label(&d, now().date()))).unwrap_or_default();
                         self.status.set_label(&format!("✓ Ajoutée : {}{when}", task.title));
                         self.entry.set_text("");
+                        self.entry.add_css_class("success");
+                        self.status.add_css_class("success");
+                        anim::replay(&self.status, "enter");
                         if !keep_open {
                             let s = sender.input_sender().clone();
-                            glib::timeout_add_local_once(Duration::from_millis(350), move || s.emit(QuickMsg::Close));
+                            glib::timeout_add_local_once(Duration::from_millis(550), move || s.emit(QuickMsg::Close));
                         }
                     }
                     Err(omado_core::Error::EmptyTitle) => self.status.set_label("Donnez un titre à la tâche."),

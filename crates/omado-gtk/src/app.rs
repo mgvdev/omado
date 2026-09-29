@@ -1,7 +1,7 @@
 //! Fenêtre principale : barre latérale, liste des tâches, panneau de détail.
 
 use std::cell::RefCell;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::rc::Rc;
 use std::time::Duration;
 
@@ -12,9 +12,12 @@ use relm4::factory::FactoryVecDeque;
 use relm4::gtk::{self, gdk, glib, prelude::*};
 use relm4::prelude::*;
 
+use crate::anim;
 use crate::detail::{Detail, DetailMsg, DetailOutput};
 use crate::quick::{QuickAdd, QuickOutput};
-use crate::rows::{ListItem, TaskInit, TaskItem, TaskOutput, fill_chips};
+use crate::rows::{
+    COMPLETE_PAUSE, ListItem, TaskInit, TaskItem, TaskMsg, TaskOutput, after_collapse, fill_chips, highlight_entry,
+};
 
 pub static BROKER: relm4::MessageBroker<AppMsg> = relm4::MessageBroker::new();
 
@@ -35,6 +38,8 @@ pub enum AppMsg {
     QuickAdd(String),
     RowSelected(Option<i32>),
     Toggle(TaskId, bool),
+    /// Replie la ligne d'une tâche qui quitte la vue, puis rafraîchit.
+    Collapse(TaskId),
     Open(i32),
     ToggleSelected,
     DeleteSelected,
@@ -85,6 +90,16 @@ pub struct App {
     search_entry: gtk::SearchEntry,
     rename_entry: gtk::Entry,
     sections: Rc<RefCell<Vec<Option<String>>>>,
+    empty_box: gtk::Box,
+    empty_icon: gtk::Image,
+    undo_timer: gtk::Box,
+    /// Tâches affichées au dernier rafraîchissement, pour repérer les nouvelles.
+    shown_ids: HashSet<TaskId>,
+    shown_view: Option<View>,
+    /// À faire apparaître (dépliée, éclairée) au prochain rafraîchissement.
+    fresh: HashSet<TaskId>,
+    /// À éclairer sur place au prochain rafraîchissement.
+    flash: HashSet<TaskId>,
     selected: Option<TaskId>,
     detail: Controller<Detail>,
     detail_open: bool,
@@ -309,13 +324,16 @@ impl Component for App {
                                 },
                             },
 
-                            gtk::Box {
-                                set_orientation: gtk::Orientation::Vertical,
+                            #[local_ref]
+                            empty_box -> gtk::Box {
                                 set_vexpand: true,
                                 set_valign: gtk::Align::Center,
-                                set_spacing: 6,
                                 #[watch]
                                 set_visible: model.empty,
+                                #[local_ref]
+                                empty_icon -> gtk::Image {
+                                    add_css_class: "empty-icon",
+                                },
                                 gtk::Label {
                                     add_css_class: "empty-title",
                                     #[watch]
@@ -331,6 +349,7 @@ impl Component for App {
 
                         gtk::Revealer {
                             set_transition_type: gtk::RevealerTransitionType::SlideLeft,
+                            set_transition_duration: 240,
                             // Sinon, replié, il réclame quand même la moitié de la largeur.
                             set_hexpand: false,
                             #[watch]
@@ -349,20 +368,27 @@ impl Component for App {
 
                         gtk::Box {
                             add_css_class: "undo-bar",
-                            set_spacing: 10,
-                            gtk::Label {
-                                #[watch]
-                                set_label: model.undo.as_ref().map_or("", |u| u.message.as_str()),
+                            set_orientation: gtk::Orientation::Vertical,
+                            gtk::Box {
+                                set_spacing: 10,
+                                gtk::Label {
+                                    #[watch]
+                                    set_label: model.undo.as_ref().map_or("", |u| u.message.as_str()),
+                                },
+                                gtk::Button {
+                                    set_label: "Annuler (u)",
+                                    add_css_class: "flat",
+                                    connect_clicked => AppMsg::Undo,
+                                },
+                                gtk::Button {
+                                    set_icon_name: "window-close-symbolic",
+                                    add_css_class: "flat",
+                                    connect_clicked => AppMsg::DismissUndo,
+                                },
                             },
-                            gtk::Button {
-                                set_label: "Annuler (u)",
-                                add_css_class: "flat",
-                                connect_clicked => AppMsg::Undo,
-                            },
-                            gtk::Button {
-                                set_icon_name: "window-close-symbolic",
-                                add_css_class: "flat",
-                                connect_clicked => AppMsg::DismissUndo,
+                            #[local_ref]
+                            undo_timer -> gtk::Box {
+                                add_css_class: "undo-timer",
                             },
                         },
                     },
@@ -387,6 +413,9 @@ impl Component for App {
         let chips = gtk::Box::new(gtk::Orientation::Horizontal, 6);
         let quick_entry = gtk::Entry::new();
         let rename_entry = gtk::Entry::new();
+        let empty_box = gtk::Box::new(gtk::Orientation::Vertical, 6);
+        let empty_icon = gtk::Image::new();
+        let undo_timer = gtk::Box::new(gtk::Orientation::Horizontal, 0);
         let colors_box = gtk::Box::new(gtk::Orientation::Horizontal, 6);
         for color in LIST_COLORS {
             let b = gtk::Button::new();
@@ -432,6 +461,13 @@ impl Component for App {
             search_entry: search_entry.clone(),
             rename_entry: rename_entry.clone(),
             sections: Rc::default(),
+            empty_box: empty_box.clone(),
+            empty_icon: empty_icon.clone(),
+            undo_timer: undo_timer.clone(),
+            shown_ids: HashSet::new(),
+            shown_view: None,
+            fresh: HashSet::new(),
+            flash: HashSet::new(),
             selected: None,
             detail,
             detail_open: false,
@@ -544,6 +580,7 @@ impl Component for App {
                 let parsed = self.contextual_parse(&text);
                 let store = &self.store;
                 fill_chips(&self.chips, &parsed, |n| store.find_list(n).ok().flatten().is_some(), now().date());
+                highlight_entry(&self.quick_entry, &parse(&text, now()));
                 if text.trim().is_empty() {
                     self.chips.set_visible(false);
                 }
@@ -568,10 +605,17 @@ impl Component for App {
                 self.selected = index.and_then(|i| self.task_at(i)).map(|t| t.id);
             }
             AppMsg::Toggle(id, done) => self.toggle(id, done, &sender),
+            AppMsg::Collapse(id) => {
+                if let Some(i) = self.tasks.iter().position(|item| item.task.id == id) {
+                    self.tasks.send(i, TaskMsg::Collapse);
+                }
+                let s = sender.input_sender().clone();
+                after_collapse(move || s.emit(AppMsg::Refresh));
+            }
             AppMsg::ToggleSelected => {
-                if let Some(task) = self.selected_task() {
-                    let (id, done) = (task.id, !task.is_completed());
-                    self.toggle(id, done, &sender);
+                // En passant par la case, `x` joue la même animation qu'un clic.
+                if let Some(i) = self.selected_index() {
+                    self.tasks.send(i, TaskMsg::Check);
                 }
             }
             AppMsg::Open(index) => {
@@ -596,7 +640,7 @@ impl Component for App {
                     }
                     self.offer_undo(format!("« {} » supprimée", task.title), snapshot, &sender);
                     self.select_neighbour();
-                    self.refresh();
+                    sender.input(AppMsg::Collapse(task.id));
                 }
             }
             AppMsg::MoveSelected(delta) => self.move_selected(delta),
@@ -609,9 +653,9 @@ impl Component for App {
                 }
                 DetailOutput::Deleted(snapshot) => {
                     self.detail_open = false;
-                    let title = snapshot.first().map(|t| t.title.clone()).unwrap_or_default();
+                    let Some((id, title)) = snapshot.first().map(|t| (t.id, t.title.clone())) else { return };
                     self.offer_undo(format!("« {title} » supprimée"), snapshot, &sender);
-                    self.refresh();
+                    sender.input(AppMsg::Collapse(id));
                 }
             },
             AppMsg::Undo => {
@@ -620,6 +664,7 @@ impl Component for App {
                         eprintln!("omado : annulation impossible : {e}");
                     }
                     self.selected = undo.snapshot.first().map(|t| t.id);
+                    self.fresh.extend(undo.snapshot.iter().map(|t| t.id));
                     self.refresh();
                     self.detail.emit(DetailMsg::Reload);
                 }
@@ -727,15 +772,29 @@ impl App {
             Ok(_) => {}
             Err(e) => eprintln!("omado : {e}"),
         }
-        // Laisse voir la case se cocher avant que la ligne ne disparaisse.
-        let s = sender.input_sender().clone();
-        glib::timeout_add_local_once(Duration::from_millis(350), move || s.emit(AppMsg::Refresh));
         self.detail.emit(DetailMsg::Reload);
+
+        // Laisse voir la case se cocher, puis replie la ligne si elle quitte la vue ;
+        // sinon (sous-tâche, vue « Terminé »…) elle se met à jour en s'éclairant.
+        let leaves = !self.store.tasks(&self.view, now()).is_ok_and(|ts| ts.iter().any(|t| t.id == id));
+        let index = self.tasks.iter().position(|item| item.task.id == id);
+        if done && let Some(i) = index {
+            self.tasks.send(i, TaskMsg::Completing);
+        }
+        let s = sender.input_sender().clone();
+        let pause = if done { COMPLETE_PAUSE } else { Duration::ZERO };
+        if leaves && index.is_some() {
+            glib::timeout_add_local_once(pause, move || s.emit(AppMsg::Collapse(id)));
+        } else {
+            self.flash.insert(id);
+            glib::timeout_add_local_once(pause, move || s.emit(AppMsg::Refresh));
+        }
     }
 
     fn offer_undo(&mut self, message: String, snapshot: Vec<Task>, sender: &ComponentSender<Self>) {
         self.undo = Some(Undo { message, snapshot });
         self.undo_generation += 1;
+        anim::replay(&self.undo_timer, "countdown");
         let (s, generation) = (sender.input_sender().clone(), self.undo_generation);
         glib::timeout_add_local_once(Duration::from_secs(7), move || s.emit(AppMsg::ExpireUndo(generation)));
     }
@@ -865,7 +924,14 @@ impl App {
                 View::All => self.counts.all,
                 _ => 0,
             };
-            tile.count.set_label(&if tile.view == View::Completed { String::new() } else { n.to_string() });
+            let label = if tile.view == View::Completed { String::new() } else { n.to_string() };
+            if tile.count.label() != label {
+                // Pas de rebond au tout premier affichage.
+                if self.shown_view.is_some() {
+                    anim::replay(&tile.count, "bump");
+                }
+                tile.count.set_label(&label);
+            }
         }
     }
 
@@ -874,11 +940,21 @@ impl App {
         let list_names: HashMap<ListId, &str> = self.lists.iter().map(|l| (l.id, l.name.as_str())).collect();
         let nest = matches!(self.view, View::List(_));
         let ordered = if nest { nest_subtasks(tasks) } else { tasks.into_iter().map(|t| (t, false)).collect() };
+        // Nouvelles depuis le dernier affichage de cette vue (ajout ici, CLI, annulation…).
+        let same_view = self.shown_view.as_ref() == Some(&self.view);
+        let mut fresh = std::mem::take(&mut self.fresh);
+        let flash = std::mem::take(&mut self.flash);
+        if same_view {
+            fresh.extend(ordered.iter().map(|(t, _)| t.id).filter(|id| !self.shown_ids.contains(id)));
+        }
+        let was_empty = self.empty;
+        self.shown_ids = ordered.iter().map(|(t, _)| t.id).collect();
         let mut sections = Vec::with_capacity(ordered.len());
         {
             let mut guard = self.tasks.guard();
             guard.clear();
             for (task, nested) in ordered {
+                let is_fresh = same_view && fresh.contains(&task.id);
                 let section = section_for(&self.view, &task, now);
                 let list_name = (!nest && task.list_id != INBOX_ID)
                     .then(|| list_names.get(&task.list_id).map(|n| n.to_string()))
@@ -890,7 +966,8 @@ impl App {
                     None
                 };
                 sections.push(section);
-                guard.push_back(TaskInit { task, nested, list_name, progress, now });
+                let flash = !is_fresh && flash.contains(&task.id);
+                guard.push_back(TaskInit { task, nested, list_name, progress, fresh: is_fresh, flash, now });
             }
         }
         *self.sections.borrow_mut() = sections;
@@ -898,6 +975,22 @@ impl App {
         list.invalidate_headers();
 
         self.empty = self.tasks.is_empty();
+        if !same_view && self.shown_view.is_some() {
+            anim::replay(list, "enter");
+            anim::replay(&self.title_label, "enter");
+        }
+        if self.empty && (!was_empty || !same_view) {
+            anim::replay(&self.empty_box, "appear");
+        }
+        let (icon, done) = match &self.view {
+            View::Today | View::All => ("object-select-symbolic", true),
+            View::Upcoming => ("x-office-calendar-symbolic", false),
+            View::Search(_) => ("edit-find-symbolic", false),
+            _ => ("view-list-bullet-symbolic", false),
+        };
+        self.empty_icon.set_icon_name(Some(icon));
+        self.empty_icon.set_class_active("done", done);
+        self.shown_view = Some(self.view.clone());
         (self.empty_title, self.empty_sub) = match &self.view {
             View::Today => ("Rien pour aujourd'hui", "Profitez-en, ou ajoutez une tâche ci-dessus."),
             View::Upcoming => ("Rien de planifié", "Ajoutez une date : « vendredi 14h », « le 15 oct. »…"),
