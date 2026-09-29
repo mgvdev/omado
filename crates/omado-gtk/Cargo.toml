@@ -1,0 +1,17 @@
+[package]
+name = "omado-gtk"
+description = "Omado : l'application graphique"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+
+[dependencies]
+omado-core.workspace = true
+chrono.workspace = true
+dirs.workspace = true
+serde.workspace = true
+toml.workspace = true
+# Pour les fonctions GTK récentes (chargement de CSS depuis une chaîne…).
+gtk4 = { version = "0.11", features = ["v4_16"] }
+relm4 = { version = "0.11", default-features = false, features = ["macros", "gnome_42"] }

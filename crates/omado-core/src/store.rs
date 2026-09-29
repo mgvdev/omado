@@ -13,7 +13,7 @@ use rusqlite::{Connection, OptionalExtension, Row, params};
 use uuid::Uuid;
 
 use crate::model::{Due, INBOX_ID, List, ListId, NewTask, Priority, Task, TaskId, View};
-use crate::parse::{self, fold, list_matches};
+use crate::parse::{self, Parsed, fold, list_matches};
 
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
@@ -27,6 +27,8 @@ pub enum Error {
     NotFound,
     #[error("la boîte de réception ne peut pas être supprimée")]
     InboxProtected,
+    #[error("identifiant ambigu : {0} tâches commencent par « {1} »")]
+    Ambiguous(usize, String),
 }
 
 pub type Result<T> = std::result::Result<T, Error>;
@@ -276,7 +278,11 @@ impl Store {
 
     /// Crée une tâche depuis la saisie rapide ; `#liste` crée la liste si besoin.
     pub fn add_quick(&self, input: &str, default_list: Option<ListId>, now: NaiveDateTime) -> Result<Task> {
-        let parsed = parse::parse(input, now);
+        self.add_parsed(parse::parse(input, now), default_list)
+    }
+
+    /// Comme [`Store::add_quick`], pour une saisie déjà analysée (et éventuellement complétée).
+    pub fn add_parsed(&self, parsed: Parsed, default_list: Option<ListId>) -> Result<Task> {
         let list_id = match &parsed.list {
             Some(name) => Some(match self.find_list(name)? {
                 Some(list) => list.id,
@@ -293,6 +299,20 @@ impl Store {
         let sql = format!("SELECT {TASK_COLS} FROM tasks t WHERE t.id = ?1");
         let task = self.conn.query_row(&sql, [id.to_string()], task_from_row).optional()?.ok_or(Error::NotFound)?;
         self.with_tags(vec![task]).map(|mut v| v.remove(0))
+    }
+
+    /// Retrouve une tâche par le début de son identifiant (comme `git` avec les commits).
+    pub fn resolve_task(&self, prefix: &str) -> Result<Task> {
+        let prefix = prefix.trim().to_lowercase();
+        if prefix.is_empty() || !prefix.chars().all(|c| c.is_ascii_hexdigit() || c == '-') {
+            return Err(Error::NotFound);
+        }
+        let mut found = self.query_tasks("t.id LIKE ?1", "t.id LIMIT 2", &[&format!("{prefix}%")])?;
+        match found.len() {
+            0 => Err(Error::NotFound),
+            1 => Ok(found.remove(0)),
+            n => Err(Error::Ambiguous(n, prefix)),
+        }
     }
 
     /// Enregistre les champs modifiables d'une tâche (titre, notes, échéance, etc.).
@@ -374,6 +394,54 @@ impl Store {
             0 => Err(Error::NotFound),
             _ => Ok(()),
         }
+    }
+
+    /// Instantané d'une tâche et de ses sous-tâches, pour pouvoir annuler.
+    pub fn snapshot(&self, id: TaskId) -> Result<Vec<Task>> {
+        let mut tasks = vec![self.task(id)?];
+        tasks.extend(self.subtasks(id)?);
+        Ok(tasks)
+    }
+
+    /// Remet des tâches dans l'état d'un instantané (parents avant enfants).
+    /// Les rappels déjà passés ne sonnent pas une seconde fois.
+    pub fn restore(&self, tasks: &[Task]) -> Result<()> {
+        let now = stamp();
+        let tx = self.conn.unchecked_transaction()?;
+        for t in tasks {
+            tx.execute(
+                "INSERT INTO tasks (id, list_id, parent_id, title, notes, priority, due_date, due_time, remind_at,
+                                    reminded_at, rrule, completed_at, position, created_at, updated_at)
+                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, CASE WHEN ?9 <= ?15 THEN ?9 END, ?10, ?11, ?12, ?13, ?14)
+                 ON CONFLICT(id) DO UPDATE SET
+                    list_id = excluded.list_id, parent_id = excluded.parent_id, title = excluded.title,
+                    notes = excluded.notes, priority = excluded.priority, due_date = excluded.due_date,
+                    due_time = excluded.due_time, remind_at = excluded.remind_at, reminded_at = excluded.reminded_at,
+                    rrule = excluded.rrule, completed_at = excluded.completed_at, position = excluded.position,
+                    updated_at = excluded.updated_at",
+                params![
+                    t.id.to_string(),
+                    t.list_id.to_string(),
+                    t.parent_id.map(|p| p.to_string()),
+                    t.title,
+                    t.notes,
+                    t.priority.to_db(),
+                    t.due.map(|d| d.date),
+                    t.due.and_then(|d| d.time),
+                    t.remind_at,
+                    t.recurrence.as_ref().map(|r| r.to_string()),
+                    t.completed_at,
+                    t.position,
+                    t.created_at,
+                    t.updated_at,
+                    now,
+                ],
+            )?;
+            tx.execute("DELETE FROM task_tags WHERE task_id = ?1", [t.id.to_string()])?;
+            write_tags(&tx, t.id, &t.tags)?;
+        }
+        tx.commit()?;
+        Ok(())
     }
 
     /// Réordonne les tâches d'une liste selon l'ordre donné.
@@ -712,6 +780,30 @@ mod tests {
         let t = s.add_quick("x #temp", None, now()).unwrap();
         s.delete_list(l.id).unwrap();
         assert!(matches!(s.task(t.id), Err(Error::NotFound)));
+    }
+
+    #[test]
+    fn restore_undoes_delete_and_completion() {
+        let s = store();
+        let parent = s.add_quick("Parent demain 9h @x", None, now()).unwrap();
+        s.add_task(NewTask { parent_id: Some(parent.id), title: "Enfant".into(), ..Default::default() }).unwrap();
+        let snap = s.snapshot(parent.id).unwrap();
+        s.delete_task(parent.id).unwrap();
+        s.restore(&snap).unwrap();
+        assert_eq!(s.snapshot(parent.id).unwrap(), snap);
+
+        s.complete(parent.id, now()).unwrap();
+        s.restore(&snap).unwrap();
+        assert!(s.snapshot(parent.id).unwrap().iter().all(|t| !t.is_completed()));
+
+        // Restaurer un rappel passé ne le fait pas sonner à nouveau.
+        let old = NaiveDate::from_ymd_opt(2020, 1, 1).unwrap().and_hms_opt(9, 0, 0).unwrap();
+        let mut past =
+            s.add_task(NewTask { title: "Ancien".into(), remind_at: Some(old), ..Default::default() }).unwrap();
+        past.title = "Ancien restauré".into();
+        s.delete_task(past.id).unwrap();
+        s.restore(&[past]).unwrap();
+        assert!(s.due_reminders(now()).unwrap().iter().all(|t| t.title != "Ancien restauré"));
     }
 
     #[test]

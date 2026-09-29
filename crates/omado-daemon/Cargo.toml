@@ -1,0 +1,13 @@
+[package]
+name = "omado-daemon"
+description = "Rappels d'Omado : notifications de bureau"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+
+[dependencies]
+omado-core.workspace = true
+anyhow.workspace = true
+chrono.workspace = true
+notify-rust = "4.18"
