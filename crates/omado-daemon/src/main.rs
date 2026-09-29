@@ -10,10 +10,12 @@ use std::time::Duration;
 
 use anyhow::{Context, Result};
 use chrono::{Duration as Delta, NaiveDateTime};
-use notify_rust::{Notification, Timeout, Urgency};
+use notify_rust::{Hint, Notification, Timeout, Urgency};
 use omado_core::human::due_label;
 use omado_core::{INBOX_ID, Priority, Store, Task, now};
 
+/// Identifiant de l'app : nom du fichier .desktop et de l'icône.
+const APP_ID: &str = "dev.omado.Omado";
 /// Intervalle maximal entre deux relectures de la base.
 const POLL: Duration = Duration::from_secs(15);
 /// Au-delà, les rappels manqués (machine éteinte) sont regroupés.
@@ -64,7 +66,8 @@ fn fire_due(store: &Store) -> Result<()> {
         let titles: Vec<&str> = grouped.iter().map(|t| t.title.as_str()).collect();
         Notification::new()
             .appname("Omado")
-            .icon("omado")
+            .hint(Hint::DesktopEntry(APP_ID.into()))
+            .icon(APP_ID)
             .summary(&format!("{} autres rappels", grouped.len()))
             .body(&titles.join("\n"))
             .show()?;
@@ -85,7 +88,8 @@ fn notify_task(task: &Task, list: Option<String>, fired_at: NaiveDateTime) -> Re
     }
     let handle = Notification::new()
         .appname("Omado")
-        .icon("omado")
+        .hint(Hint::DesktopEntry(APP_ID.into()))
+        .icon(APP_ID)
         .summary(&task.title)
         .body(&body.join(" · "))
         .urgency(if task.priority == Priority::High { Urgency::Critical } else { Urgency::Normal })

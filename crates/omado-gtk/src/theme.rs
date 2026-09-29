@@ -292,8 +292,8 @@ entry.detail-title:focus-within {{ border-color: {accent}; }}
 .schedule.overdue {{ color: {red}; }}
 .recurrence-label {{ color: {cyan}; }}
 .parse-error {{ color: {yellow}; font-size: 0.85em; }}
-textview.notes, textview.notes text {{ background: {fill}; color: {fg}; border-radius: {rs}px; }}
-textview.notes {{ border: 1px solid {border}; padding: 6px; }}
+textview.notes {{ background: {fill}; color: {fg}; border: 1px solid {border}; border-radius: {rs}px; padding: 6px; }}
+textview.notes text {{ background: transparent; color: {fg}; }}
 .footnote {{ font-size: 0.8em; color: {muted}; }}
 
 /* Barre d'annulation */

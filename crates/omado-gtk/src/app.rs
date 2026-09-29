@@ -135,6 +135,10 @@ impl Component for App {
                         add_css_class: "search",
                         set_placeholder_text: Some("Rechercher (/)"),
                         connect_search_changed[sender] => move |e| sender.input(AppMsg::Search(e.text().into())),
+                        connect_stop_search[sender] => move |e| {
+                            e.set_text("");
+                            sender.input(AppMsg::Escape);
+                        },
                     },
 
                     #[local_ref]
@@ -465,7 +469,11 @@ impl Component for App {
 
     fn update(&mut self, msg: AppMsg, sender: ComponentSender<Self>, window: &Self::Root) {
         match msg {
-            AppMsg::ShowMain => window.present(),
+            AppMsg::ShowMain => {
+                window.present();
+                // Sinon le champ de recherche prend le focus et avale les raccourcis à une lettre.
+                self.focus_selected_row();
+            }
             AppMsg::ShowQuick => match &self.quick {
                 Some(q) => {
                     q.widget().present();
@@ -756,11 +764,17 @@ impl App {
                 list.select_row(Some(&row));
                 row.grab_focus();
             }
-            None => {
-                if let Some(row) = list.row_at_index(0) {
+            None => match list.row_at_index(0) {
+                Some(row) => {
                     row.grab_focus();
                 }
-            }
+                // Liste vide : focus sur la fenêtre, pour que les raccourcis restent actifs.
+                None => {
+                    if let Some(window) = list.root().and_downcast::<gtk::Window>() {
+                        GtkWindowExt::set_focus(&window, None::<&gtk::Widget>);
+                    }
+                }
+            },
         }
     }
 
