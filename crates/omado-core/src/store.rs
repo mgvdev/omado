@@ -14,6 +14,7 @@ use uuid::Uuid;
 
 use crate::model::{Due, INBOX_ID, List, ListId, NewTask, Priority, Task, TaskId, View};
 use crate::parse::{self, Parsed, fold, list_matches};
+use crate::{tr, trn};
 
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
@@ -21,14 +22,32 @@ pub enum Error {
     Sqlite(#[from] rusqlite::Error),
     #[error(transparent)]
     Io(#[from] std::io::Error),
-    #[error("le titre ne peut pas être vide")]
+    #[error("{}", message(self))]
     EmptyTitle,
-    #[error("élément introuvable")]
+    #[error("{}", message(self))]
     NotFound,
-    #[error("la boîte de réception ne peut pas être supprimée")]
+    #[error("{}", message(self))]
     InboxProtected,
-    #[error("identifiant ambigu : {0} tâches commencent par « {1} »")]
+    #[error("{}", message(self))]
     Ambiguous(usize, String),
+}
+
+/// Message traduit des erreurs propres à Omado (hors des attributs, que
+/// l'extraction des chaînes ne lit pas).
+fn message(e: &Error) -> String {
+    match e {
+        Error::EmptyTitle => tr!("the title can't be empty").into(),
+        Error::NotFound => tr!("not found").into(),
+        Error::InboxProtected => tr!("the inbox can't be deleted").into(),
+        Error::Ambiguous(n, prefix) => trn!(
+            "ambiguous ID: {n} task starts with “{prefix}”",
+            "ambiguous ID: {n} tasks start with “{prefix}”",
+            *n,
+            prefix = prefix
+        ),
+        Error::Sqlite(e) => e.to_string(),
+        Error::Io(e) => e.to_string(),
+    }
 }
 
 pub type Result<T> = std::result::Result<T, Error>;
@@ -146,7 +165,7 @@ impl Store {
         let now = stamp();
         tx.execute(
             "INSERT INTO lists (id, name, color, position, created_at, updated_at) VALUES (?1, ?2, NULL, 0, ?3, ?3)",
-            params![INBOX_ID.to_string(), "Boîte de réception", now],
+            params![INBOX_ID.to_string(), "Inbox", now],
         )?;
         tx.pragma_update(None, "user_version", SCHEMA_VERSION)?;
         tx.commit()?;
@@ -197,8 +216,14 @@ impl Store {
         self.list(id)
     }
 
+    /// Liste désignée par `#nom`. La boîte de réception répond aussi à son nom
+    /// affiché et à « inbox », quel que soit le nom enregistré.
     pub fn find_list(&self, typed: &str) -> Result<Option<List>> {
-        Ok(self.lists()?.into_iter().find(|l| list_matches(&l.name, typed)))
+        let matches = |l: &List| {
+            list_matches(&l.name, typed)
+                || (l.is_inbox() && (list_matches(l.display_name(), typed) || list_matches("inbox", typed)))
+        };
+        Ok(self.lists()?.into_iter().find(matches))
     }
 
     pub fn rename_list(&self, id: ListId, name: &str) -> Result<()> {

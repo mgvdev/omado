@@ -7,7 +7,7 @@ use std::time::Duration;
 
 use chrono::{NaiveDateTime, Timelike};
 use omado_core::human::{date_label, day_heading, due_label};
-use omado_core::{Completion, Counts, Due, INBOX_ID, List, ListId, Store, Task, TaskId, View, now, parse};
+use omado_core::{Completion, Counts, Due, INBOX_ID, List, ListId, Store, Task, TaskId, View, now, parse, tr};
 use relm4::factory::FactoryVecDeque;
 use relm4::gtk::{self, gdk, glib, prelude::*};
 use relm4::prelude::*;
@@ -148,7 +148,7 @@ impl Component for App {
                     #[local_ref]
                     search_entry -> gtk::SearchEntry {
                         add_css_class: "search",
-                        set_placeholder_text: Some("Rechercher (/)"),
+                        set_placeholder_text: Some(tr!("Search (/)")),
                         connect_search_changed[sender] => move |e| sender.input(AppMsg::Search(e.text().into())),
                         connect_stop_search[sender] => move |e| {
                             e.set_text("");
@@ -176,7 +176,7 @@ impl Component for App {
                             gtk::Box {
                                 set_margin_end: 8,
                                 gtk::Label {
-                                    set_label: "LISTES",
+                                    set_label: &tr!("Lists").to_uppercase(),
                                     add_css_class: "sidebar-title",
                                     set_hexpand: true,
                                     set_xalign: 0.0,
@@ -185,11 +185,11 @@ impl Component for App {
                                     set_icon_name: "list-add-symbolic",
                                     add_css_class: "flat",
                                     set_valign: gtk::Align::End,
-                                    set_tooltip_text: Some("Nouvelle liste"),
+                                    set_tooltip_text: Some(tr!("New list")),
                                     #[wrap(Some)]
                                     set_popover = &gtk::Popover {
                                         gtk::Entry {
-                                            set_placeholder_text: Some("Nom de la liste"),
+                                            set_placeholder_text: Some(tr!("List name")),
                                             set_width_chars: 22,
                                             connect_activate[sender] => move |e| {
                                                 sender.input(AppMsg::NewList(e.text().into()));
@@ -209,7 +209,7 @@ impl Component for App {
                             },
 
                             gtk::Label {
-                                set_label: "ÉTIQUETTES",
+                                set_label: &tr!("Tags").to_uppercase(),
                                 add_css_class: "sidebar-title",
                                 set_xalign: 0.0,
                                 #[watch]
@@ -259,7 +259,7 @@ impl Component for App {
                                     set_icon_name: "view-more-symbolic",
                                     add_css_class: "flat",
                                     set_valign: gtk::Align::Center,
-                                    set_tooltip_text: Some("Options de la liste"),
+                                    set_tooltip_text: Some(tr!("List options")),
                                     #[watch]
                                     set_visible: model.list_menu,
                                     #[wrap(Some)]
@@ -269,7 +269,7 @@ impl Component for App {
                                             set_spacing: 10,
                                             set_margin_all: 6,
 
-                                            gtk::Label { set_label: "RENOMMER", add_css_class: "field-label", set_xalign: 0.0 },
+                                            gtk::Label { set_label: &tr!("Rename").to_uppercase(), add_css_class: "field-label", set_xalign: 0.0 },
                                             #[local_ref]
                                             rename_entry -> gtk::Entry {
                                                 set_width_chars: 24,
@@ -278,7 +278,7 @@ impl Component for App {
                                                     close_popover(e);
                                                 },
                                             },
-                                            gtk::Label { set_label: "COULEUR", add_css_class: "field-label", set_xalign: 0.0 },
+                                            gtk::Label { set_label: &tr!("Color").to_uppercase(), add_css_class: "field-label", set_xalign: 0.0 },
                                             #[local_ref]
                                             colors_box -> gtk::Box { set_spacing: 6 },
                                             #[local_ref]
@@ -294,7 +294,8 @@ impl Component for App {
                             #[local_ref]
                             quick_entry -> gtk::Entry {
                                 add_css_class: "quick-add",
-                                set_placeholder_text: Some("Nouvelle tâche… ex. « Appeler Paul demain 9h #perso @tel !1 »  (n)"),
+                                // Translators: quick entry understands English and French only: keep the example in English.
+                                set_placeholder_text: Some(tr!("New task… e.g. “Call Paul tomorrow 9am #personal @phone !1”  (n)")),
                                 connect_changed[sender] => move |e| sender.input(AppMsg::QuickChanged(e.text().into())),
                                 connect_activate[sender] => move |e| sender.input(AppMsg::QuickAdd(e.text().into())),
                             },
@@ -376,7 +377,7 @@ impl Component for App {
                                     set_label: model.undo.as_ref().map_or("", |u| u.message.as_str()),
                                 },
                                 gtk::Button {
-                                    set_label: "Annuler (u)",
+                                    set_label: tr!("Undo (u)"),
                                     add_css_class: "flat",
                                     connect_clicked => AppMsg::Undo,
                                 },
@@ -429,16 +430,17 @@ impl Component for App {
             b.connect_clicked(move |_| s.emit(AppMsg::SetListColor(color)));
             colors_box.append(&b);
         }
-        let delete_list_button = gtk::Button::with_label("Supprimer la liste…");
+        let delete_list_button = gtk::Button::with_label(tr!("Delete list…"));
         {
             // Deux clics : la suppression emporte les tâches de la liste.
             let s = sender.input_sender().clone();
             delete_list_button.connect_clicked(move |b| {
-                if b.label().is_some_and(|l| l.starts_with("Confirmer")) {
-                    b.set_label("Supprimer la liste…");
+                let confirm = tr!("Confirm: delete with its tasks");
+                if b.label().is_some_and(|l| l == confirm) {
+                    b.set_label(tr!("Delete list…"));
                     s.emit(AppMsg::DeleteList);
                 } else {
-                    b.set_label("Confirmer : supprimer avec ses tâches");
+                    b.set_label(confirm);
                 }
             });
         }
@@ -598,7 +600,7 @@ impl Component for App {
                         self.refresh();
                     }
                     Err(omado_core::Error::EmptyTitle) => {}
-                    Err(e) => eprintln!("omado : {e}"),
+                    Err(e) => eprintln!("{}", tr!("omado: {error}", error = e)),
                 }
             }
             AppMsg::RowSelected(index) => {
@@ -638,7 +640,7 @@ impl Component for App {
                     if self.detail_open {
                         self.detail.emit(DetailMsg::Close);
                     }
-                    self.offer_undo(format!("« {} » supprimée", task.title), snapshot, &sender);
+                    self.offer_undo(tr!("“{title}” deleted", title = task.title), snapshot, &sender);
                     self.select_neighbour();
                     sender.input(AppMsg::Collapse(task.id));
                 }
@@ -654,14 +656,14 @@ impl Component for App {
                 DetailOutput::Deleted(snapshot) => {
                     self.detail_open = false;
                     let Some((id, title)) = snapshot.first().map(|t| (t.id, t.title.clone())) else { return };
-                    self.offer_undo(format!("« {title} » supprimée"), snapshot, &sender);
+                    self.offer_undo(tr!("“{title}” deleted", title = title), snapshot, &sender);
                     sender.input(AppMsg::Collapse(id));
                 }
             },
             AppMsg::Undo => {
                 if let Some(undo) = self.undo.take() {
                     if let Err(e) = self.store.restore(&undo.snapshot) {
-                        eprintln!("omado : annulation impossible : {e}");
+                        eprintln!("{}", tr!("omado: couldn't undo: {error}", error = e));
                     }
                     self.selected = undo.snapshot.first().map(|t| t.id);
                     self.fresh.extend(undo.snapshot.iter().map(|t| t.id));
@@ -677,7 +679,7 @@ impl Component for App {
             }
             AppMsg::NewList(name) => match self.store.create_list(&name) {
                 Ok(list) => self.select(View::List(list.id)),
-                Err(e) => eprintln!("omado : {e}"),
+                Err(e) => eprintln!("{}", tr!("omado: {error}", error = e)),
             },
             AppMsg::RenameList(name) => {
                 if let View::List(id) = self.view {
@@ -765,12 +767,15 @@ impl App {
             self.store.uncomplete(id).map(|_| Completion::Completed)
         };
         match result {
-            Ok(Completion::Completed) if done => self.offer_undo(format!("« {title} » terminée"), snapshot, sender),
+            Ok(Completion::Completed) if done => {
+                self.offer_undo(tr!("“{title}” completed", title = title), snapshot, sender)
+            }
             Ok(Completion::Rescheduled(due)) => {
-                self.offer_undo(format!("« {title} » → {}", due_label(&due, now().date())), snapshot, sender)
+                let when = due_label(&due, now().date());
+                self.offer_undo(tr!("“{title}” → {when}", title = title, when = when), snapshot, sender)
             }
             Ok(_) => {}
-            Err(e) => eprintln!("omado : {e}"),
+            Err(e) => eprintln!("{}", tr!("omado: {error}", error = e)),
         }
         self.detail.emit(DetailMsg::Reload);
 
@@ -937,7 +942,7 @@ impl App {
 
     fn refresh_tasks(&mut self, now: NaiveDateTime) {
         let tasks = self.store.tasks(&self.view, now).unwrap_or_default();
-        let list_names: HashMap<ListId, &str> = self.lists.iter().map(|l| (l.id, l.name.as_str())).collect();
+        let list_names: HashMap<ListId, &str> = self.lists.iter().map(|l| (l.id, l.display_name())).collect();
         let nest = matches!(self.view, View::List(_));
         let ordered = if nest { nest_subtasks(tasks) } else { tasks.into_iter().map(|t| (t, false)).collect() };
         // Nouvelles depuis le dernier affichage de cette vue (ajout ici, CLI, annulation…).
@@ -991,14 +996,16 @@ impl App {
         self.empty_icon.set_icon_name(Some(icon));
         self.empty_icon.set_class_active("done", done);
         self.shown_view = Some(self.view.clone());
+        // Translators: dates are understood in English and French only: keep the examples in English.
+        let add_date = tr!("Add a date: “friday 2pm”, “Oct 15”…");
         (self.empty_title, self.empty_sub) = match &self.view {
-            View::Today => ("Rien pour aujourd'hui", "Profitez-en, ou ajoutez une tâche ci-dessus."),
-            View::Upcoming => ("Rien de planifié", "Ajoutez une date : « vendredi 14h », « le 15 oct. »…"),
-            View::All => ("Tout est fait", "Il n'y a plus rien à faire."),
-            View::Completed => ("Rien de terminé pour l'instant", "Les tâches cochées apparaîtront ici."),
-            View::List(_) => ("Liste vide", "Ajoutez une tâche ci-dessus."),
-            View::Tag(_) => ("Aucune tâche avec cette étiquette", ""),
-            View::Search(_) => ("Aucun résultat", "Essayez un autre mot."),
+            View::Today => (tr!("Nothing for today"), tr!("Enjoy it, or add a task above.")),
+            View::Upcoming => (tr!("Nothing scheduled"), add_date),
+            View::All => (tr!("All done"), tr!("There's nothing left to do.")),
+            View::Completed => (tr!("Nothing completed yet"), tr!("Checked tasks will show up here.")),
+            View::List(_) => (tr!("Empty list"), tr!("Add a task above.")),
+            View::Tag(_) => (tr!("No tasks with this tag"), ""),
+            View::Search(_) => (tr!("No results"), tr!("Try another word.")),
         };
         self.count_text = match self.view {
             View::Completed | View::Search(_) => String::new(),
@@ -1019,13 +1026,13 @@ impl App {
             _ => None,
         };
         self.title = match &self.view {
-            View::Today => "Aujourd'hui".into(),
-            View::Upcoming => "Planifié".into(),
-            View::All => "Tout".into(),
-            View::Completed => "Terminé".into(),
-            View::List(_) => current_list.map(|l| l.name.clone()).unwrap_or_default(),
+            View::Today => tr!("Today").into(),
+            View::Upcoming => tr!("Scheduled").into(),
+            View::All => tr!("All").into(),
+            View::Completed => tr!("Completed").into(),
+            View::List(_) => current_list.map(|l| l.display_name().to_string()).unwrap_or_default(),
             View::Tag(tag) => format!("@{tag}"),
-            View::Search(q) => format!("« {} »", q.trim()),
+            View::Search(q) => tr!("“{query}”", query = q.trim()),
         };
         for color in LIST_COLORS {
             self.title_label.remove_css_class(color);
@@ -1071,15 +1078,15 @@ fn section_for(view: &View, task: &Task, now: NaiveDateTime) -> Option<String> {
     let today = now.date();
     match view {
         View::Today => Some(match task.due {
-            Some(due) if due.date < today => "En retard".into(),
-            _ => "Aujourd'hui".into(),
+            Some(due) if due.date < today => tr!("Overdue").into(),
+            _ => tr!("Today").into(),
         }),
         View::Upcoming => task.due.map(|d| day_heading(d.date, today)),
         View::All => Some(match task.due {
-            Some(due) if due.date < today => "En retard".into(),
-            Some(due) if due.date == today => "Aujourd'hui".into(),
-            Some(_) => "Plus tard".into(),
-            None => "Sans date".into(),
+            Some(due) if due.date < today => tr!("Overdue").into(),
+            Some(due) if due.date == today => tr!("Today").into(),
+            Some(_) => tr!("Later").into(),
+            None => tr!("No date").into(),
         }),
         View::Completed => task.completed_at.map(|at| date_label(at.date(), today)),
         _ => None,
@@ -1093,7 +1100,7 @@ fn section_header(sections: &[Option<String>], row: &gtk::ListBoxRow, before: Op
         Some(title) if Some(&title) != previous.as_ref() => {
             let label = gtk::Label::builder().label(&title).xalign(0.0).build();
             label.add_css_class("section-header");
-            if title == "En retard" {
+            if title == tr!("Overdue") {
                 label.add_css_class("overdue");
             }
             row.set_header(Some(&label));
@@ -1104,10 +1111,10 @@ fn section_header(sections: &[Option<String>], row: &gtk::ListBoxRow, before: Op
 
 fn build_tiles(grid: &gtk::Grid, sender: &ComponentSender<App>) -> Vec<Tile> {
     let specs = [
-        (View::Today, "Aujourd'hui", "x-office-calendar-symbolic", "today", "Ctrl+1"),
-        (View::Upcoming, "Planifié", "appointment-soon-symbolic", "upcoming", "Ctrl+2"),
-        (View::All, "Tout", "view-list-bullet-symbolic", "all", "Ctrl+3"),
-        (View::Completed, "Terminé", "object-select-symbolic", "completed", "Ctrl+4"),
+        (View::Today, tr!("Today"), "x-office-calendar-symbolic", "today", "Ctrl+1"),
+        (View::Upcoming, tr!("Scheduled"), "appointment-soon-symbolic", "upcoming", "Ctrl+2"),
+        (View::All, tr!("All"), "view-list-bullet-symbolic", "all", "Ctrl+3"),
+        (View::Completed, tr!("Completed"), "object-select-symbolic", "completed", "Ctrl+4"),
     ];
     specs
         .into_iter()

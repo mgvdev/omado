@@ -6,8 +6,9 @@ current Omarchy theme.
 
 ![Omado showing today's tasks, with the detail pane open on a task that has notes and subtasks](docs/screenshot.png)
 
-> The interface is in French for now. Quick entry understands both English and
-> French.
+Omado speaks English, French, German, Spanish, Brazilian Portuguese, Russian,
+Simplified Chinese, Japanese, Italian and Polish, and follows your system
+language. Quick entry understands English and French.
 
 ## Installation
 
@@ -16,7 +17,7 @@ current Omarchy theme.
 ./install.sh --uninstall # remove everything except your tasks
 ```
 
-You need Rust and GTK 4.16 or later (`pacman -S rust gtk4`). For the Hyprland
+You need Rust, GTK 4.16 or later and gettext (`pacman -S rust gtk4 gettext`). For the Hyprland
 shortcuts, add this at the end of `~/.config/hypr/hyprland.lua`:
 
 ```lua
@@ -95,6 +96,19 @@ omado lists
   Omarchy's notification center. Notifications offer "Done", "+10 min" and
   "+1 h", and clicking one opens Omado.
 
+## Languages
+
+Omado picks its language like any Linux program: `LANGUAGE`, then `LC_ALL`,
+`LC_MESSAGES` and `LANG`. To run it in another language than the rest of your
+desktop, set `LANGUAGE`, e.g. `LANGUAGE=fr omado`.
+
+Translations are gettext catalogs in `po/`, compiled into the binaries when
+building. After changing strings in the code, run `po/update.sh`: it refreshes
+`po/omado.pot` and merges it into each `.po`. To add a language, run
+`msginit -i po/omado.pot -l xx -o po/xx.po` and add `xx` to `po/LINGUAS`; if
+its plural rule differs from English, also add it to `plural_form` in
+`crates/omado-core/src/i18n.rs` (a test will remind you).
+
 ## Architecture
 
 ```
@@ -104,6 +118,7 @@ crates/
 ├── omado-daemon   the `omado-daemon` binary: reminders
 └── omado-gtk      the `omado-gtk` binary: the GTK4 + Relm4 interface
 packaging/         .desktop, icon, systemd service, Hyprland rules
+po/                translations (gettext)
 ```
 
 Tasks live in `~/.local/share/omado/omado.db` (SQLite, WAL mode), shared by all

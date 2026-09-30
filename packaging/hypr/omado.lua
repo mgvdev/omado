@@ -2,7 +2,9 @@
 --   dofile(os.getenv("HOME") .. "/.local/share/omado/hypr/omado.lua")
 
 -- La saisie rapide flotte au centre, au-dessus de tout, sur tous les bureaux.
-o.window({ class = "^(dev.omado.Omado)$", title = "^(Omado — Saisie rapide)$" }, {
+-- Son titre est traduit (« Omado — Saisie rapide », « Omado — Quick entry »…) ;
+-- la fenêtre principale s'appelle simplement « Omado ».
+o.window({ class = "^(dev.omado.Omado)$", title = "^(Omado — .+)$" }, {
   float = true,
   center = true,
   pin = true,

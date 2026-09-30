@@ -5,15 +5,15 @@ use std::collections::HashMap;
 use std::io::IsTerminal;
 use std::os::unix::process::CommandExt;
 use std::path::PathBuf;
-use std::process::Command;
+use std::process::{Command, ExitCode};
 
 use anyhow::{Context, Result, bail};
-use clap::{Parser, Subcommand};
+use clap::{CommandFactory, FromArgMatches, Parser, Subcommand};
 use omado_core::human::due_label;
-use omado_core::{Completion, INBOX_ID, List, ListId, Store, Task, View, now, parse};
+use omado_core::{Completion, INBOX_ID, List, ListId, Store, Task, View, now, parse, tr};
 
 #[derive(Parser)]
-#[command(name = "omado", version, about = "Omado : vos tâches, dans Omarchy")]
+#[command(name = "omado", version)]
 struct Cli {
     #[command(subcommand)]
     cmd: Option<Cmd>,
@@ -21,49 +21,76 @@ struct Cli {
 
 #[derive(Subcommand)]
 enum Cmd {
-    /// Ajoute une tâche. Saisie rapide : « Appeler Paul demain 9h #perso @tel !1 »
     Add {
         #[arg(required = true, trailing_var_arg = true)]
         text: Vec<String>,
-        /// Liste de destination (sinon `#liste` dans le texte, ou la boîte de réception)
         #[arg(short, long)]
         list: Option<String>,
     },
-    /// Affiche une vue : today (défaut), upcoming, all, done, inbox, #liste ou @étiquette
     Ls {
         view: Option<String>,
         #[arg(long)]
         json: bool,
     },
-    /// Cherche dans les titres et les notes
     Search {
         #[arg(required = true, trailing_var_arg = true)]
         query: Vec<String>,
         #[arg(long)]
         json: bool,
     },
-    /// Coche une tâche (début d'identifiant suffisant)
-    Done { id: String },
-    /// Décoche une tâche
-    Undo { id: String },
-    /// Supprime une tâche
-    Rm { id: String },
-    /// Affiche les listes
+    Done {
+        id: String,
+    },
+    Undo {
+        id: String,
+    },
+    Rm {
+        id: String,
+    },
     Lists {
         #[arg(long)]
         json: bool,
     },
-    /// Montre comment une saisie serait comprise, sans rien créer
     Parse {
         #[arg(required = true, trailing_var_arg = true)]
         text: Vec<String>,
     },
-    /// Ouvre la fenêtre de saisie rapide
     Quick,
 }
 
-fn main() -> Result<()> {
-    let cli = Cli::parse();
+/// Textes d'aide, traduits (les attributs de `clap` ne passent pas par l'extraction des chaînes).
+fn command() -> clap::Command {
+    Cli::command()
+        .about(tr!("Omado: your tasks, in Omarchy"))
+        .mut_subcommand("add", |c| {
+            // Translators: quick entry understands English and French only: keep the example in English.
+            c.about(tr!("Add a task, in quick entry syntax: “Call Paul tomorrow 9am #personal @phone !1”"))
+                .mut_arg("list", |a| a.help(tr!("Destination list (otherwise #list in the text, or the inbox)")))
+        })
+        .mut_subcommand("ls", |c| {
+            c.about(tr!("Show a view: today (default), upcoming, all, done, inbox, #list or @tag"))
+        })
+        .mut_subcommand("search", |c| c.about(tr!("Search titles and notes")))
+        .mut_subcommand("done", |c| c.about(tr!("Complete a task (the start of its ID is enough)")))
+        .mut_subcommand("undo", |c| c.about(tr!("Reopen a task")))
+        .mut_subcommand("rm", |c| c.about(tr!("Delete a task")))
+        .mut_subcommand("lists", |c| c.about(tr!("Show the lists")))
+        .mut_subcommand("parse", |c| c.about(tr!("Show how an entry would be understood, without creating anything")))
+        .mut_subcommand("quick", |c| c.about(tr!("Open the quick entry window")))
+}
+
+fn main() -> ExitCode {
+    match run() {
+        Ok(()) => ExitCode::SUCCESS,
+        Err(e) => {
+            eprintln!("{}", tr!("omado: {error}", error = format!("{e:#}")));
+            ExitCode::FAILURE
+        }
+    }
+}
+
+fn run() -> Result<()> {
+    let cli = Cli::from_arg_matches(&command().get_matches()).unwrap_or_else(|e| e.exit());
     let Some(cmd) = cli.cmd else { return launch_gui(&[]) };
     if let Cmd::Quick = cmd {
         return launch_gui(&["--quick"]);
@@ -73,7 +100,7 @@ fn main() -> Result<()> {
         return Ok(());
     }
 
-    let store = Store::open_default().context("ouverture de la base Omado")?;
+    let store = Store::open_default().context(tr!("opening the Omado database"))?;
     let out = Printer::new(&store)?;
     match cmd {
         Cmd::Add { text, list } => {
@@ -82,7 +109,7 @@ fn main() -> Result<()> {
                 None => None,
             };
             let task = store.add_quick(&text.join(" "), default_list, now())?;
-            print!("Ajoutée : ");
+            print!("{} ", tr!("Added:"));
             // Recréé : `#liste` a pu créer une nouvelle liste.
             Printer::new(&store)?.task(&task, "");
         }
@@ -96,21 +123,22 @@ fn main() -> Result<()> {
         Cmd::Done { id } => {
             let task = store.resolve_task(&id)?;
             match store.complete(task.id, now())? {
-                Completion::Completed => println!("Terminée : {}", task.title),
+                Completion::Completed => println!("{}", tr!("Completed: {title}", title = task.title)),
                 Completion::Rescheduled(due) => {
-                    println!("{} → prochaine fois : {}", task.title, due_label(&due, now().date()))
+                    let when = due_label(&due, now().date());
+                    println!("{}", tr!("{title} → next time: {when}", title = task.title, when = when))
                 }
             }
         }
         Cmd::Undo { id } => {
             let task = store.resolve_task(&id)?;
             store.uncomplete(task.id)?;
-            println!("Rouverte : {}", task.title);
+            println!("{}", tr!("Reopened: {title}", title = task.title));
         }
         Cmd::Rm { id } => {
             let task = store.resolve_task(&id)?;
             store.delete_task(task.id)?;
-            println!("Supprimée : {}", task.title);
+            println!("{}", tr!("Deleted: {title}", title = task.title));
         }
         Cmd::Lists { json } => {
             let lists = store.lists()?;
@@ -120,7 +148,7 @@ fn main() -> Result<()> {
                 let counts = store.counts(now())?;
                 for l in lists {
                     let n = counts.per_list.get(&l.id).copied().unwrap_or(0);
-                    println!("{:>4}  {}", n, l.name);
+                    println!("{:>4}  {}", n, l.display_name());
                 }
             }
         }
@@ -134,11 +162,11 @@ fn launch_gui(args: &[&str]) -> Result<()> {
     let sibling = std::env::current_exe().ok().and_then(|p| p.parent().map(|d| d.join("omado-gtk")));
     let program = sibling.filter(|p| p.exists()).unwrap_or_else(|| PathBuf::from("omado-gtk"));
     let err = Command::new(&program).args(args).exec();
-    Err(err).with_context(|| format!("impossible de lancer {}", program.display()))
+    Err(err).with_context(|| tr!("couldn't start {program}", program = program.display()))
 }
 
 fn find_list(store: &Store, name: &str) -> Result<List> {
-    store.find_list(name.trim_start_matches('#'))?.with_context(|| format!("liste introuvable : {name}"))
+    store.find_list(name.trim_start_matches('#'))?.with_context(|| tr!("list not found: {name}", name = name))
 }
 
 fn resolve_view(store: &Store, name: &str) -> Result<View> {
@@ -150,28 +178,36 @@ fn resolve_view(store: &Store, name: &str) -> Result<View> {
         "inbox" => View::List(INBOX_ID),
         _ if name.starts_with('@') => View::Tag(name[1..].to_string()),
         _ if name.starts_with('#') => View::List(find_list(store, name)?.id),
-        _ => bail!("vue inconnue : {name} (today, upcoming, all, done, inbox, #liste, @étiquette)"),
+        _ => bail!(tr!("unknown view: {name} (today, upcoming, all, done, inbox, #list, @tag)", name = name)),
     })
 }
 
 fn print_parse(input: &str) {
     let p = parse(input, now());
     let today = now().date();
-    println!("Titre       : {}", p.title);
+    let mut fields = vec![(tr!("Title"), p.title.clone())];
     if let Some(due) = &p.due {
-        println!("Échéance    : {}", due_label(due, today));
+        fields.push((tr!("Due"), due_label(due, today)));
     }
     if let Some(r) = &p.recurrence {
-        println!("Récurrence  : {} ({r})", r.describe());
+        fields.push((tr!("Repeats"), format!("{} ({r})", r.describe())));
     }
     if let Some(l) = &p.list {
-        println!("Liste       : {l}");
+        fields.push((tr!("List"), l.clone()));
     }
     if !p.tags.is_empty() {
-        println!("Étiquettes  : {}", p.tags.join(", "));
+        fields.push((tr!("Tags"), p.tags.join(", ")));
     }
     if let Some(n) = p.priority.level() {
-        println!("Priorité    : !{n}");
+        fields.push((tr!("Priority"), format!("!{n}")));
+    }
+    // Libellés alignés ; un caractère CJK occupe deux colonnes.
+    let width = |s: &str| s.chars().map(|c| if c.len_utf8() >= 3 { 2 } else { 1 }).sum::<usize>();
+    let widest = fields.iter().map(|(label, _)| width(label)).max().unwrap_or(0);
+    for (label, value) in fields {
+        let label = format!("{label}{}", " ".repeat(widest - width(label)));
+        // Translators: one line of `omado parse`, e.g. “Title   : Call Paul”.
+        println!("{}", tr!("{label}: {value}", label = label, value = value));
     }
 }
 
@@ -198,7 +234,7 @@ impl Printer {
             return Ok(());
         }
         if tasks.is_empty() {
-            println!("{}", self.paint("2", "Rien ici."));
+            println!("{}", self.paint("2", tr!("Nothing here.")));
             return Ok(());
         }
         if !nest {

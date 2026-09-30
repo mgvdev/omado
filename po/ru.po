@@ -1,0 +1,823 @@
+# Russian translation for Omado.
+# This file is distributed under the same license as the Omado package.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Omado\n"
+"Report-Msgid-Bugs-To: https://github.com/mgvdev/omado/issues\n"
+"POT-Creation-Date: 2026-09-30 14:58+0200\n"
+"PO-Revision-Date: 2026-09-30 14:58+0200\n"
+"Last-Translator: Omado contributors\n"
+"Language-Team: Russian\n"
+"Language: ru\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && "
+"n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
+
+#: crates/omado-cli/src/main.rs
+msgid "Omado: your tasks, in Omarchy"
+msgstr "Omado: ваши задачи в Omarchy"
+
+#. Translators: quick entry understands English and French only: keep the example in English.
+#: crates/omado-cli/src/main.rs
+msgid ""
+"Add a task, in quick entry syntax: “Call Paul tomorrow 9am #personal @phone !"
+"1”"
+msgstr ""
+"Добавить задачу в синтаксисе быстрого ввода: «Call Paul tomorrow 9am "
+"#personal @phone !1»"
+
+#: crates/omado-cli/src/main.rs
+msgid "Destination list (otherwise #list in the text, or the inbox)"
+msgstr "Целевой список (иначе #список из текста или «Входящие»)"
+
+#: crates/omado-cli/src/main.rs
+msgid "Show a view: today (default), upcoming, all, done, inbox, #list or @tag"
+msgstr ""
+"Показать представление: today (по умолчанию), upcoming, all, done, inbox, "
+"#список или @метка"
+
+#: crates/omado-cli/src/main.rs
+msgid "Search titles and notes"
+msgstr "Искать в названиях и заметках"
+
+#: crates/omado-cli/src/main.rs
+msgid "Complete a task (the start of its ID is enough)"
+msgstr "Отметить задачу выполненной (достаточно начала её ID)"
+
+#: crates/omado-cli/src/main.rs
+msgid "Reopen a task"
+msgstr "Снять с задачи отметку о выполнении"
+
+#: crates/omado-cli/src/main.rs
+msgid "Delete a task"
+msgstr "Удалить задачу"
+
+#: crates/omado-cli/src/main.rs
+msgid "Show the lists"
+msgstr "Показать списки"
+
+#: crates/omado-cli/src/main.rs
+msgid "Show how an entry would be understood, without creating anything"
+msgstr "Показать, как будет понята запись, ничего не создавая"
+
+#: crates/omado-cli/src/main.rs
+msgid "Open the quick entry window"
+msgstr "Открыть окно быстрого ввода"
+
+#: crates/omado-cli/src/main.rs crates/omado-gtk/src/app.rs
+#: crates/omado-gtk/src/detail.rs
+#, rust-format
+msgid "omado: {error}"
+msgstr "omado: {error}"
+
+#: crates/omado-cli/src/main.rs crates/omado-daemon/src/main.rs
+msgid "opening the Omado database"
+msgstr "открытие базы данных Omado"
+
+#: crates/omado-cli/src/main.rs
+msgid "Added:"
+msgstr "Добавлено:"
+
+#: crates/omado-cli/src/main.rs
+#, rust-format
+msgid "Completed: {title}"
+msgstr "Выполнено: {title}"
+
+#: crates/omado-cli/src/main.rs
+#, rust-format
+msgid "{title} → next time: {when}"
+msgstr "{title} → в следующий раз: {when}"
+
+#: crates/omado-cli/src/main.rs
+#, rust-format
+msgid "Reopened: {title}"
+msgstr "Отметка снята: {title}"
+
+#: crates/omado-cli/src/main.rs
+#, rust-format
+msgid "Deleted: {title}"
+msgstr "Удалено: {title}"
+
+#: crates/omado-cli/src/main.rs
+#, rust-format
+msgid "couldn't start {program}"
+msgstr "не удалось запустить {program}"
+
+#: crates/omado-cli/src/main.rs
+#, rust-format
+msgid "list not found: {name}"
+msgstr "список не найден: {name}"
+
+#: crates/omado-cli/src/main.rs
+#, rust-format
+msgid "unknown view: {name} (today, upcoming, all, done, inbox, #list, @tag)"
+msgstr ""
+"неизвестное представление: {name} (today, upcoming, all, done, inbox, "
+"#список, @метка)"
+
+#: crates/omado-cli/src/main.rs
+msgid "Title"
+msgstr "Название"
+
+#: crates/omado-cli/src/main.rs
+msgid "Due"
+msgstr "Срок"
+
+#: crates/omado-cli/src/main.rs
+msgid "Repeats"
+msgstr "Повтор"
+
+#: crates/omado-cli/src/main.rs crates/omado-gtk/src/detail.rs
+msgid "List"
+msgstr "Список"
+
+#: crates/omado-cli/src/main.rs crates/omado-gtk/src/app.rs
+#: crates/omado-gtk/src/detail.rs
+msgid "Tags"
+msgstr "Метки"
+
+#: crates/omado-cli/src/main.rs crates/omado-gtk/src/detail.rs
+msgid "Priority"
+msgstr "Приоритет"
+
+#. Translators: one line of `omado parse`, e.g. “Title   : Call Paul”.
+#: crates/omado-cli/src/main.rs
+#, rust-format
+msgid "{label}: {value}"
+msgstr "{label}: {value}"
+
+#: crates/omado-cli/src/main.rs
+msgid "Nothing here."
+msgstr "Здесь пусто."
+
+#: crates/omado-core/src/human.rs
+msgctxt "weekday"
+msgid "Monday"
+msgstr "понедельник"
+
+#: crates/omado-core/src/human.rs
+msgctxt "weekday"
+msgid "Tuesday"
+msgstr "вторник"
+
+#: crates/omado-core/src/human.rs
+msgctxt "weekday"
+msgid "Wednesday"
+msgstr "среда"
+
+#: crates/omado-core/src/human.rs
+msgctxt "weekday"
+msgid "Thursday"
+msgstr "четверг"
+
+#: crates/omado-core/src/human.rs
+msgctxt "weekday"
+msgid "Friday"
+msgstr "пятница"
+
+#: crates/omado-core/src/human.rs
+msgctxt "weekday"
+msgid "Saturday"
+msgstr "суббота"
+
+#: crates/omado-core/src/human.rs
+msgctxt "weekday"
+msgid "Sunday"
+msgstr "воскресенье"
+
+#: crates/omado-core/src/human.rs
+msgctxt "abbreviated month"
+msgid "Jan"
+msgstr "янв."
+
+#: crates/omado-core/src/human.rs
+msgctxt "abbreviated month"
+msgid "Feb"
+msgstr "февр."
+
+#: crates/omado-core/src/human.rs
+msgctxt "abbreviated month"
+msgid "Mar"
+msgstr "марта"
+
+#: crates/omado-core/src/human.rs
+msgctxt "abbreviated month"
+msgid "Apr"
+msgstr "апр."
+
+#: crates/omado-core/src/human.rs
+msgctxt "abbreviated month"
+msgid "May"
+msgstr "мая"
+
+#: crates/omado-core/src/human.rs
+msgctxt "abbreviated month"
+msgid "Jun"
+msgstr "июня"
+
+#: crates/omado-core/src/human.rs
+msgctxt "abbreviated month"
+msgid "Jul"
+msgstr "июля"
+
+#: crates/omado-core/src/human.rs
+msgctxt "abbreviated month"
+msgid "Aug"
+msgstr "авг."
+
+#: crates/omado-core/src/human.rs
+msgctxt "abbreviated month"
+msgid "Sep"
+msgstr "сент."
+
+#: crates/omado-core/src/human.rs
+msgctxt "abbreviated month"
+msgid "Oct"
+msgstr "окт."
+
+#: crates/omado-core/src/human.rs
+msgctxt "abbreviated month"
+msgid "Nov"
+msgstr "нояб."
+
+#: crates/omado-core/src/human.rs
+msgctxt "abbreviated month"
+msgid "Dec"
+msgstr "дек."
+
+#. Translators: a date in the current year. {month} is an abbreviated month name from above.
+#: crates/omado-core/src/human.rs
+#, rust-format
+msgctxt "date"
+msgid "{month} {day}"
+msgstr "{day} {month}"
+
+#: crates/omado-core/src/human.rs
+#, rust-format
+msgctxt "date"
+msgid "{month} {day}, {year}"
+msgstr "{day} {month} {year}"
+
+#: crates/omado-core/src/human.rs
+msgctxt "date"
+msgid "today"
+msgstr "сегодня"
+
+#: crates/omado-core/src/human.rs
+msgctxt "date"
+msgid "tomorrow"
+msgstr "завтра"
+
+#: crates/omado-core/src/human.rs
+msgctxt "date"
+msgid "yesterday"
+msgstr "вчера"
+
+#: crates/omado-core/src/human.rs
+msgctxt "time"
+msgid "AM"
+msgstr "ДП"
+
+#: crates/omado-core/src/human.rs
+msgctxt "time"
+msgid "PM"
+msgstr "ПП"
+
+#. Translators: a time on the hour. Use any of {h24} (0–23), {h12} (1–12), {mm} (“00”) and {ampm}.
+#: crates/omado-core/src/human.rs
+#, no-rust-format
+msgctxt "time on the hour"
+msgid "{h12} {ampm}"
+msgstr "{h24}:{mm}"
+
+#. Translators: a time with minutes. Use any of {h24} (0–23), {h12} (1–12), {mm} (00–59) and {ampm}.
+#: crates/omado-core/src/human.rs
+#, no-rust-format
+msgctxt "time with minutes"
+msgid "{h12}:{mm} {ampm}"
+msgstr "{h24}:{mm}"
+
+#. Translators: a due date with its time, e.g. “tomorrow, 9 AM”. {date} starts lowercase where your language allows.
+#: crates/omado-core/src/human.rs
+#, rust-format
+msgctxt "date and time"
+msgid "{date}, {time}"
+msgstr "{date}, {time}"
+
+#: crates/omado-core/src/human.rs
+#, rust-format
+msgctxt "day heading"
+msgid "{weekday}, {date}"
+msgstr "{weekday}, {date}"
+
+#: crates/omado-core/src/human.rs
+#, rust-format
+msgctxt "day heading"
+msgid "{day} · {date}"
+msgstr "{day} · {date}"
+
+#: crates/omado-core/src/model.rs
+msgid "Inbox"
+msgstr "Входящие"
+
+#: crates/omado-core/src/recurrence.rs
+#, rust-format
+msgid "unsupported recurrence rule: {rule}"
+msgstr "неподдерживаемое правило повторения: {rule}"
+
+#: crates/omado-core/src/recurrence.rs
+msgid "every day"
+msgstr "каждый день"
+
+#: crates/omado-core/src/recurrence.rs
+#, rust-format
+msgid "every {n} day"
+msgid_plural "every {n} days"
+msgstr[0] "каждый {n} день"
+msgstr[1] "каждые {n} дня"
+msgstr[2] "каждые {n} дней"
+
+#: crates/omado-core/src/recurrence.rs
+msgid "every week"
+msgstr "каждую неделю"
+
+#: crates/omado-core/src/recurrence.rs
+#, rust-format
+msgid "every {n} week"
+msgid_plural "every {n} weeks"
+msgstr[0] "каждую {n} неделю"
+msgstr[1] "каждые {n} недели"
+msgstr[2] "каждые {n} недель"
+
+#: crates/omado-core/src/recurrence.rs
+msgid "every weekday"
+msgstr "по будням"
+
+#. Translators: {days} is a list of weekdays from “weekday in a recurrence”, e.g. “Monday and Thursday”.
+#: crates/omado-core/src/recurrence.rs
+#, rust-format
+msgid "every {days}"
+msgstr "по {days}"
+
+#: crates/omado-core/src/recurrence.rs
+#, rust-format
+msgid "every {n} week on {days}"
+msgid_plural "every {n} weeks on {days}"
+msgstr[0] "каждую {n} неделю по {days}"
+msgstr[1] "каждые {n} недели по {days}"
+msgstr[2] "каждые {n} недель по {days}"
+
+#: crates/omado-core/src/recurrence.rs
+msgid "every month"
+msgstr "каждый месяц"
+
+#: crates/omado-core/src/recurrence.rs
+#, rust-format
+msgid "every {n} month"
+msgid_plural "every {n} months"
+msgstr[0] "каждый {n} месяц"
+msgstr[1] "каждые {n} месяца"
+msgstr[2] "каждые {n} месяцев"
+
+#: crates/omado-core/src/recurrence.rs
+msgid "every year"
+msgstr "каждый год"
+
+#: crates/omado-core/src/recurrence.rs
+#, rust-format
+msgid "every {n} year"
+msgid_plural "every {n} years"
+msgstr[0] "каждый {n} год"
+msgstr[1] "каждые {n} года"
+msgstr[2] "каждые {n} лет"
+
+#: crates/omado-core/src/recurrence.rs
+msgctxt "weekday in a recurrence"
+msgid "Monday"
+msgstr "понедельникам"
+
+#: crates/omado-core/src/recurrence.rs
+msgctxt "weekday in a recurrence"
+msgid "Tuesday"
+msgstr "вторникам"
+
+#: crates/omado-core/src/recurrence.rs
+msgctxt "weekday in a recurrence"
+msgid "Wednesday"
+msgstr "средам"
+
+#: crates/omado-core/src/recurrence.rs
+msgctxt "weekday in a recurrence"
+msgid "Thursday"
+msgstr "четвергам"
+
+#: crates/omado-core/src/recurrence.rs
+msgctxt "weekday in a recurrence"
+msgid "Friday"
+msgstr "пятницам"
+
+#: crates/omado-core/src/recurrence.rs
+msgctxt "weekday in a recurrence"
+msgid "Saturday"
+msgstr "субботам"
+
+#: crates/omado-core/src/recurrence.rs
+msgctxt "weekday in a recurrence"
+msgid "Sunday"
+msgstr "воскресеньям"
+
+#. Translators: separator between the first items of a list, e.g. “Monday, Wednesday and Friday”.
+#: crates/omado-core/src/recurrence.rs
+msgctxt "list"
+msgid ", "
+msgstr ", "
+
+#: crates/omado-core/src/recurrence.rs
+#, rust-format
+msgctxt "list"
+msgid "{items} and {last}"
+msgstr "{items} и {last}"
+
+#: crates/omado-core/src/store.rs
+msgid "the title can't be empty"
+msgstr "название не может быть пустым"
+
+#: crates/omado-core/src/store.rs
+msgid "not found"
+msgstr "не найдено"
+
+#: crates/omado-core/src/store.rs
+msgid "the inbox can't be deleted"
+msgstr "список «Входящие» нельзя удалить"
+
+#: crates/omado-core/src/store.rs
+#, rust-format
+msgid "ambiguous ID: {n} task starts with “{prefix}”"
+msgid_plural "ambiguous ID: {n} tasks start with “{prefix}”"
+msgstr[0] "неоднозначный ID: {n} задача начинается с «{prefix}»"
+msgstr[1] "неоднозначный ID: {n} задачи начинаются с «{prefix}»"
+msgstr[2] "неоднозначный ID: {n} задач начинаются с «{prefix}»"
+
+#: crates/omado-daemon/src/main.rs
+msgid "omado-daemon: watching reminders"
+msgstr "omado-daemon: слежение за напоминаниями"
+
+#: crates/omado-daemon/src/main.rs
+#, rust-format
+msgid "omado-daemon: {error}"
+msgstr "omado-daemon: {error}"
+
+#: crates/omado-daemon/src/main.rs
+#, rust-format
+msgid "{n} more reminder"
+msgid_plural "{n} more reminders"
+msgstr[0] "Ещё {n} напоминание"
+msgstr[1] "Ещё {n} напоминания"
+msgstr[2] "Ещё {n} напоминаний"
+
+#: crates/omado-daemon/src/main.rs
+msgctxt "notification action"
+msgid "Open"
+msgstr "Открыть"
+
+#: crates/omado-daemon/src/main.rs
+msgctxt "notification action"
+msgid "Done"
+msgstr "Готово"
+
+#: crates/omado-daemon/src/main.rs
+#, rust-format
+msgid "+{n} min"
+msgstr "+{n} мин"
+
+#: crates/omado-daemon/src/main.rs
+#, rust-format
+msgid "+{n} h"
+msgstr "+{n} ч"
+
+#: crates/omado-daemon/src/main.rs
+#, rust-format
+msgid "omado-daemon: couldn't open Omado: {error}"
+msgstr "omado-daemon: не удалось открыть Omado: {error}"
+
+#: crates/omado-daemon/src/main.rs
+#, rust-format
+msgid "omado-daemon: action “{action}”: {error}"
+msgstr "omado-daemon: действие «{action}»: {error}"
+
+#: crates/omado-gtk/src/app.rs
+msgid "Search (/)"
+msgstr "Поиск (/)"
+
+#: crates/omado-gtk/src/app.rs
+msgid "Lists"
+msgstr "Списки"
+
+#: crates/omado-gtk/src/app.rs
+msgid "New list"
+msgstr "Новый список"
+
+#: crates/omado-gtk/src/app.rs
+msgid "List name"
+msgstr "Название списка"
+
+#: crates/omado-gtk/src/app.rs
+msgid "List options"
+msgstr "Параметры списка"
+
+#: crates/omado-gtk/src/app.rs
+msgid "Rename"
+msgstr "Переименовать"
+
+#: crates/omado-gtk/src/app.rs
+msgid "Color"
+msgstr "Цвет"
+
+#. Translators: quick entry understands English and French only: keep the example in English.
+#: crates/omado-gtk/src/app.rs
+msgid "New task… e.g. “Call Paul tomorrow 9am #personal @phone !1”  (n)"
+msgstr ""
+"Новая задача… например, «Call Paul tomorrow 9am #personal @phone !1»  (n)"
+
+#: crates/omado-gtk/src/app.rs
+msgid "Undo (u)"
+msgstr "Отменить (u)"
+
+#: crates/omado-gtk/src/app.rs
+msgid "Delete list…"
+msgstr "Удалить список…"
+
+#: crates/omado-gtk/src/app.rs
+msgid "Confirm: delete with its tasks"
+msgstr "Подтвердить: удалить вместе с задачами"
+
+#: crates/omado-gtk/src/app.rs
+#, rust-format
+msgid "“{title}” deleted"
+msgstr "Задача «{title}» удалена"
+
+#: crates/omado-gtk/src/app.rs
+#, rust-format
+msgid "omado: couldn't undo: {error}"
+msgstr "omado: не удалось отменить: {error}"
+
+#: crates/omado-gtk/src/app.rs
+#, rust-format
+msgid "“{title}” completed"
+msgstr "Задача «{title}» выполнена"
+
+#: crates/omado-gtk/src/app.rs
+#, rust-format
+msgid "“{title}” → {when}"
+msgstr "«{title}» → {when}"
+
+#. Translators: dates are understood in English and French only: keep the examples in English.
+#: crates/omado-gtk/src/app.rs
+msgid "Add a date: “friday 2pm”, “Oct 15”…"
+msgstr "Добавьте дату: «friday 2pm», «Oct 15»…"
+
+#: crates/omado-gtk/src/app.rs
+msgid "Nothing for today"
+msgstr "На сегодня ничего"
+
+#: crates/omado-gtk/src/app.rs
+msgid "Enjoy it, or add a task above."
+msgstr "Отдохните или добавьте задачу выше."
+
+#: crates/omado-gtk/src/app.rs
+msgid "Nothing scheduled"
+msgstr "Ничего не запланировано"
+
+#: crates/omado-gtk/src/app.rs
+msgid "All done"
+msgstr "Всё сделано"
+
+#: crates/omado-gtk/src/app.rs
+msgid "There's nothing left to do."
+msgstr "Больше делать нечего."
+
+#: crates/omado-gtk/src/app.rs
+msgid "Nothing completed yet"
+msgstr "Пока ничего не выполнено"
+
+#: crates/omado-gtk/src/app.rs
+msgid "Checked tasks will show up here."
+msgstr "Здесь появятся отмеченные задачи."
+
+#: crates/omado-gtk/src/app.rs
+msgid "Empty list"
+msgstr "Список пуст"
+
+#: crates/omado-gtk/src/app.rs
+msgid "Add a task above."
+msgstr "Добавьте задачу выше."
+
+#: crates/omado-gtk/src/app.rs
+msgid "No tasks with this tag"
+msgstr "Нет задач с этой меткой"
+
+#: crates/omado-gtk/src/app.rs
+msgid "No results"
+msgstr "Ничего не найдено"
+
+#: crates/omado-gtk/src/app.rs
+msgid "Try another word."
+msgstr "Попробуйте другое слово."
+
+#: crates/omado-gtk/src/app.rs
+msgid "Today"
+msgstr "Сегодня"
+
+#: crates/omado-gtk/src/app.rs
+msgid "Scheduled"
+msgstr "Планы"
+
+#: crates/omado-gtk/src/app.rs
+msgid "All"
+msgstr "Все"
+
+#: crates/omado-gtk/src/app.rs
+msgid "Completed"
+msgstr "Выполнено"
+
+#: crates/omado-gtk/src/app.rs
+#, rust-format
+msgid "“{query}”"
+msgstr "«{query}»"
+
+#: crates/omado-gtk/src/app.rs
+msgid "Overdue"
+msgstr "Просрочено"
+
+#: crates/omado-gtk/src/app.rs
+msgid "Later"
+msgstr "Позже"
+
+#: crates/omado-gtk/src/app.rs
+msgid "No date"
+msgstr "Без даты"
+
+#: crates/omado-gtk/src/detail.rs
+msgid "Details"
+msgstr "Подробности"
+
+#: crates/omado-gtk/src/detail.rs
+msgid "Close (Esc)"
+msgstr "Закрыть (Esc)"
+
+#: crates/omado-gtk/src/detail.rs
+msgid "When"
+msgstr "Когда"
+
+#. Translators: dates are understood in English and French only: keep these examples in English.
+#: crates/omado-gtk/src/detail.rs
+msgid "tomorrow 9am, friday, every monday…"
+msgstr "tomorrow 9am, friday, every monday…"
+
+#: crates/omado-gtk/src/detail.rs
+msgid "Pick a date"
+msgstr "Выбрать дату"
+
+#: crates/omado-gtk/src/detail.rs
+msgid "Remove the due date"
+msgstr "Убрать срок"
+
+#. Translators: dates are understood in English and French only: keep the examples in English.
+#: crates/omado-gtk/src/detail.rs
+msgid "Didn't get that. Try “tomorrow 9am”, “Oct 15” or “every monday”."
+msgstr ""
+"Не удалось распознать. Попробуйте «tomorrow 9am», «Oct 15» или «every "
+"monday»."
+
+#: crates/omado-gtk/src/detail.rs
+msgid "home urgent…"
+msgstr "дом срочно…"
+
+#: crates/omado-gtk/src/detail.rs
+msgid "Notes"
+msgstr "Заметки"
+
+#: crates/omado-gtk/src/detail.rs
+msgid "Subtasks"
+msgstr "Подзадачи"
+
+#: crates/omado-gtk/src/detail.rs
+msgid "＋ Add a subtask"
+msgstr "＋ Добавить подзадачу"
+
+#: crates/omado-gtk/src/detail.rs
+msgid "Delete"
+msgstr "Удалить"
+
+#: crates/omado-gtk/src/detail.rs
+msgid "No due date"
+msgstr "Без срока"
+
+#: crates/omado-gtk/src/detail.rs
+#, rust-format
+msgid "Reminder · {when}"
+msgstr "Напоминание · {when}"
+
+#: crates/omado-gtk/src/detail.rs
+msgid "Remind me"
+msgstr "Напомнить"
+
+#: crates/omado-gtk/src/detail.rs
+msgid "Reminder: add a due date first"
+msgstr "Напоминание: сначала укажите срок"
+
+#: crates/omado-gtk/src/detail.rs
+#, rust-format
+msgid "Created {created} · modified {modified}"
+msgstr "Создана {created} · изменена {modified}"
+
+#: crates/omado-gtk/src/detail.rs
+msgid "Delete the subtask"
+msgstr "Удалить подзадачу"
+
+#: crates/omado-gtk/src/main.rs
+msgid "Open quick entry"
+msgstr "Открыть быстрый ввод"
+
+#: crates/omado-gtk/src/main.rs
+#, rust-format
+msgid "omado: couldn't open the database: {error}"
+msgstr "omado: не удалось открыть базу данных: {error}"
+
+#: crates/omado-gtk/src/quick.rs packaging/dev.omado.Omado.desktop.in
+msgid "Quick entry"
+msgstr "Быстрый ввод"
+
+#. Translators: quick entry understands English and French only: keep the example in English.
+#: crates/omado-gtk/src/quick.rs
+msgid "Call Paul tomorrow 9am #personal @phone !1"
+msgstr "Call Paul tomorrow 9am #personal @phone !1"
+
+#: crates/omado-gtk/src/quick.rs
+msgid "↵ add · ⇧↵ add and continue · Esc close"
+msgstr "↵ добавить · ⇧↵ добавить и продолжить · Esc закрыть"
+
+#: crates/omado-gtk/src/quick.rs
+#, rust-format
+msgid "✓ Added: {title}"
+msgstr "✓ Добавлено: {title}"
+
+#: crates/omado-gtk/src/quick.rs
+msgid "Give the task a title."
+msgstr "Укажите название задачи."
+
+#: crates/omado-gtk/src/quick.rs
+#, rust-format
+msgid "Error: {error}"
+msgstr "Ошибка: {error}"
+
+#: crates/omado-gtk/src/rows.rs
+msgid "Reopen (x)"
+msgstr "Снять отметку (x)"
+
+#: crates/omado-gtk/src/rows.rs
+msgid "Complete (x)"
+msgstr "Отметить выполненной (x)"
+
+#: crates/omado-gtk/src/rows.rs
+msgctxt "priority"
+msgid "high"
+msgstr "высокий"
+
+#: crates/omado-gtk/src/rows.rs
+msgctxt "priority"
+msgid "medium"
+msgstr "средний"
+
+#: crates/omado-gtk/src/rows.rs
+msgctxt "priority"
+msgid "low"
+msgstr "низкий"
+
+#: crates/omado-gtk/src/rows.rs
+msgctxt "priority"
+msgid "none"
+msgstr "нет"
+
+#: crates/omado-gtk/src/rows.rs
+msgid "new list"
+msgstr "новый список"
+
+#: packaging/dev.omado.Omado.desktop.in
+msgid "Omado"
+msgstr "Omado"
+
+#: packaging/dev.omado.Omado.desktop.in
+msgid "Tasks"
+msgstr "Задачи"
+
+#: packaging/dev.omado.Omado.desktop.in
+msgid "Your tasks and reminders, in Omarchy"
+msgstr "Ваши задачи и напоминания в Omarchy"
+
+#: packaging/dev.omado.Omado.desktop.in
+msgid "todo;tasks;reminders;"
+msgstr "todo;задачи;дела;напоминания;tasks;reminders;"

@@ -7,12 +7,13 @@ use std::cell::Cell;
 use std::rc::Rc;
 
 use chrono::{Datelike, NaiveDate, NaiveTime};
-use omado_core::human::{date_label, due_label};
-use omado_core::{Due, List, NewTask, Priority, Store, Task, TaskId, now, parse};
+use omado_core::human::{date_label_inline, datetime_label, due_label};
+use omado_core::{Due, List, NewTask, Priority, Store, Task, TaskId, now, parse, tr};
 use relm4::gtk::{self, glib, prelude::*};
 use relm4::{ComponentParts, ComponentSender, RelmWidgetExt, SimpleComponent};
 
 use crate::anim;
+use crate::rows::priority_name;
 
 pub struct Detail {
     store: Rc<Store>,
@@ -80,10 +81,17 @@ struct DetailWidgets {
     filling: Rc<Cell<bool>>,
 }
 
-const PRIORITIES: [&str; 4] = ["Aucune", "!3 · basse", "!2 · moyenne", "!1 · haute"];
+/// Libellés de la liste déroulante, dans l'ordre de `Priority::to_db`.
+fn priority_choices() -> Vec<String> {
+    let none = omado_core::i18n::capitalize(priority_name(Priority::None));
+    let levels = [Priority::Low, Priority::Medium, Priority::High]
+        .map(|p| format!("!{} · {}", p.level().unwrap_or_default(), priority_name(p)));
+    std::iter::once(none).chain(levels).collect()
+}
 
+/// Intitulé de champ, en capitales.
 fn field(label: &str) -> gtk::Label {
-    let l = gtk::Label::builder().label(label).xalign(0.0).margin_top(14).build();
+    let l = gtk::Label::builder().label(label.to_uppercase()).xalign(0.0).margin_top(14).build();
     l.add_css_class("field-label");
     l
 }
@@ -119,12 +127,12 @@ impl SimpleComponent for Detail {
         header.set_margin_top(8);
         header.set_margin_end(8);
         header.set_margin_start(14);
-        let head_label = gtk::Label::builder().label("DÉTAILS").xalign(0.0).hexpand(true).build();
+        let head_label = gtk::Label::builder().label(tr!("Details").to_uppercase()).xalign(0.0).hexpand(true).build();
         head_label.add_css_class("field-label");
         header.append(&head_label);
         let close = gtk::Button::from_icon_name("window-close-symbolic");
         close.add_css_class("flat");
-        close.set_tooltip_text(Some("Fermer (Échap)"));
+        close.set_tooltip_text(Some(tr!("Close (Esc)")));
         {
             let send = send.clone();
             close.connect_clicked(move |_| send(DetailMsg::Close));
@@ -155,7 +163,7 @@ impl SimpleComponent for Detail {
         body.append(&title);
 
         // Échéance
-        body.append(&field("QUAND"));
+        body.append(&field(tr!("When")));
         let schedule = gtk::Label::builder().xalign(0.0).wrap(true).build();
         schedule.add_css_class("schedule");
         body.append(&schedule);
@@ -164,8 +172,9 @@ impl SimpleComponent for Detail {
         body.append(&recurrence);
 
         let when_row = gtk::Box::new(gtk::Orientation::Horizontal, 6);
-        let when =
-            gtk::Entry::builder().placeholder_text("demain 9h, vendredi, tous les lundis…").hexpand(true).build();
+        // Translators: dates are understood in English and French only: keep these examples in English.
+        let examples = tr!("tomorrow 9am, friday, every monday…");
+        let when = gtk::Entry::builder().placeholder_text(examples).hexpand(true).build();
         {
             let send = send.clone();
             when.connect_activate(move |e| send(DetailMsg::Schedule(e.text().into())));
@@ -187,14 +196,14 @@ impl SimpleComponent for Detail {
         }
         let pick = gtk::MenuButton::builder()
             .icon_name("x-office-calendar-symbolic")
-            .tooltip_text("Choisir une date")
+            .tooltip_text(tr!("Pick a date"))
             .popover(&gtk::Popover::builder().child(&calendar).build())
             .build();
         pick.add_css_class("flat");
         when_row.append(&pick);
         let clear = gtk::Button::from_icon_name("edit-clear-symbolic");
         clear.add_css_class("flat");
-        clear.set_tooltip_text(Some("Retirer l'échéance"));
+        clear.set_tooltip_text(Some(tr!("Remove the due date")));
         {
             let send = send.clone();
             clear.connect_clicked(move |_| send(DetailMsg::ClearSchedule));
@@ -202,7 +211,8 @@ impl SimpleComponent for Detail {
         when_row.append(&clear);
         body.append(&when_row);
         let when_error = gtk::Label::builder()
-            .label("Pas compris. Essayez « demain 9h », « le 15 oct. » ou « tous les lundis ».")
+            // Translators: dates are understood in English and French only: keep the examples in English.
+            .label(tr!("Didn't get that. Try “tomorrow 9am”, “Oct 15” or “every monday”."))
             .xalign(0.0)
             .wrap(true)
             .visible(false)
@@ -229,8 +239,9 @@ impl SimpleComponent for Detail {
         body.append(&remind_row);
 
         // Priorité et liste
-        body.append(&field("PRIORITÉ"));
-        let priority = gtk::DropDown::from_strings(&PRIORITIES);
+        body.append(&field(tr!("Priority")));
+        let choices = priority_choices();
+        let priority = gtk::DropDown::from_strings(&choices.iter().map(String::as_str).collect::<Vec<_>>());
         {
             let send = send.clone();
             let filling = filling.clone();
@@ -243,7 +254,7 @@ impl SimpleComponent for Detail {
         body.append(&priority);
 
         let list_row = gtk::Box::new(gtk::Orientation::Vertical, 4);
-        list_row.append(&field("LISTE"));
+        list_row.append(&field(tr!("List")));
         let list = gtk::DropDown::from_strings(&[]);
         {
             let send = send.clone();
@@ -258,8 +269,8 @@ impl SimpleComponent for Detail {
         body.append(&list_row);
 
         // Étiquettes
-        body.append(&field("ÉTIQUETTES"));
-        let tags = gtk::Entry::builder().placeholder_text("maison urgent…").build();
+        body.append(&field(tr!("Tags")));
+        let tags = gtk::Entry::builder().placeholder_text(tr!("home urgent…")).build();
         {
             let send = send.clone();
             tags.connect_activate(move |e| send(DetailMsg::Tags(e.text().into())));
@@ -272,7 +283,7 @@ impl SimpleComponent for Detail {
         body.append(&tags);
 
         // Notes
-        body.append(&field("NOTES"));
+        body.append(&field(tr!("Notes")));
         let notes = gtk::TextView::builder().wrap_mode(gtk::WrapMode::WordChar).height_request(90).build();
         notes.add_css_class("notes");
         {
@@ -291,10 +302,10 @@ impl SimpleComponent for Detail {
         body.append(&notes);
 
         // Sous-tâches
-        body.append(&field("SOUS-TÂCHES"));
+        body.append(&field(tr!("Subtasks")));
         let subtasks = gtk::Box::new(gtk::Orientation::Vertical, 2);
         body.append(&subtasks);
-        let subtask_entry = gtk::Entry::builder().placeholder_text("＋ Ajouter une sous-tâche").build();
+        let subtask_entry = gtk::Entry::builder().placeholder_text(tr!("＋ Add a subtask")).build();
         {
             let send = send.clone();
             subtask_entry.connect_activate(move |e| {
@@ -310,7 +321,7 @@ impl SimpleComponent for Detail {
         let footnote = gtk::Label::builder().xalign(0.0).hexpand(true).wrap(true).build();
         footnote.add_css_class("footnote");
         footer.append(&footnote);
-        let delete = gtk::Button::with_label("Supprimer");
+        let delete = gtk::Button::with_label(tr!("Delete"));
         delete.add_css_class("flat");
         delete.add_css_class("danger");
         {
@@ -534,7 +545,7 @@ fn report<T>(result: omado_core::store::Result<T>) -> bool {
     match result {
         Ok(_) => true,
         Err(e) => {
-            eprintln!("omado : {e}");
+            eprintln!("{}", tr!("omado: {error}", error = e));
             false
         }
     }
@@ -612,7 +623,7 @@ impl Detail {
                 }
             }
             None => {
-                w.schedule.set_label("Pas d'échéance");
+                w.schedule.set_label(tr!("No due date"));
                 w.schedule.remove_css_class("overdue");
             }
         }
@@ -626,16 +637,14 @@ impl Detail {
         w.remind.set_active(task.remind_at.is_some());
         w.remind.set_sensitive(task.due.is_some());
         w.remind_label.set_label(&match task.remind_at {
-            Some(at) => {
-                format!("Rappel · {} {}", date_label(at.date(), today), omado_core::human::time_label(at.time()))
-            }
-            None if task.due.is_some() => "Me le rappeler".to_string(),
-            None => "Rappel : ajoutez d'abord une échéance".to_string(),
+            Some(at) => tr!("Reminder · {when}", when = datetime_label(at.date(), at.time(), today)),
+            None if task.due.is_some() => tr!("Remind me").to_string(),
+            None => tr!("Reminder: add a due date first").to_string(),
         });
 
         w.priority.set_selected(task.priority.to_db() as u32);
 
-        let names: Vec<&str> = self.lists.iter().map(|l| l.name.as_str()).collect();
+        let names: Vec<&str> = self.lists.iter().map(List::display_name).collect();
         w.list.set_model(Some(&gtk::StringList::new(&names)));
         if let Some(i) = self.lists.iter().position(|l| l.id == task.list_id) {
             w.list.set_selected(i as u32);
@@ -651,10 +660,10 @@ impl Detail {
             buffer.set_text(&task.notes);
         }
         w.subtask_entry.set_visible(task.parent_id.is_none());
-        w.footnote.set_label(&format!(
-            "Créée {} · modifiée {}",
-            date_label(task.created_at.date(), today).to_lowercase(),
-            date_label(task.updated_at.date(), today).to_lowercase()
+        w.footnote.set_label(&tr!(
+            "Created {created} · modified {modified}",
+            created = date_label_inline(task.created_at.date(), today),
+            modified = date_label_inline(task.updated_at.date(), today),
         ));
         w.filling.set(false);
         self.fill_subtasks();
@@ -682,7 +691,7 @@ impl Detail {
             }
             let remove = gtk::Button::from_icon_name("window-close-symbolic");
             remove.add_css_class("flat");
-            remove.set_tooltip_text(Some("Supprimer la sous-tâche"));
+            remove.set_tooltip_text(Some(tr!("Delete the subtask")));
             let send = input.clone();
             remove.connect_clicked(move |_| send.emit(DetailMsg::DeleteSubtask(id)));
             row.append(&remove);

@@ -8,6 +8,7 @@ use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 use crate::recurrence::Recurrence;
+use crate::tr;
 
 pub type ListId = Uuid;
 pub type TaskId = Uuid;
@@ -29,6 +30,11 @@ pub struct List {
 impl List {
     pub fn is_inbox(&self) -> bool {
         self.id == INBOX_ID
+    }
+
+    /// Nom à afficher : la boîte de réception, qu'on ne renomme pas, suit la langue.
+    pub fn display_name(&self) -> &str {
+        if self.is_inbox() { tr!("Inbox") } else { &self.name }
     }
 }
 

@@ -1,18 +1,18 @@
 [Desktop Entry]
 Type=Application
 Name=Omado
-GenericName=Tâches
-Comment=Vos tâches et rappels, dans Omarchy
+GenericName=Tasks
+Comment=Your tasks and reminders, in Omarchy
 Exec=omado-gtk
 Icon=dev.omado.Omado
 Terminal=false
 Categories=Office;ProjectManagement;GTK;
-Keywords=todo;tâches;rappels;reminders;tasks;
+Keywords=todo;tasks;reminders;
 StartupNotify=true
 StartupWMClass=dev.omado.Omado
 DBusActivatable=false
 Actions=quick;
 
 [Desktop Action quick]
-Name=Saisie rapide
+Name=Quick entry
 Exec=omado-gtk --quick

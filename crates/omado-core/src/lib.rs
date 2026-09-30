@@ -1,6 +1,7 @@
 //! Cœur d'Omado : modèle, stockage SQLite, saisie rapide et récurrences.
 
 pub mod human;
+pub mod i18n;
 pub mod model;
 pub mod parse;
 pub mod recurrence;

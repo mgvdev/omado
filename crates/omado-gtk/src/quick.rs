@@ -1,20 +1,19 @@
 //! Fenêtre de saisie rapide (`omado quick`), à lier à un raccourci Hyprland.
 //!
 //! Entrée ajoute et ferme, Maj+Entrée ajoute et garde la fenêtre ouverte,
-//! Échap ferme. Le titre fixe sert aux règles de fenêtre Hyprland.
+//! Échap ferme. Le titre, « Omado — … » quelle que soit la langue, sert aux
+//! règles de fenêtre Hyprland.
 
 use std::rc::Rc;
 use std::time::Duration;
 
 use omado_core::human::due_label;
-use omado_core::{Store, now, parse};
+use omado_core::{Store, now, parse, tr};
 use relm4::gtk::{self, gdk, glib, prelude::*};
 use relm4::{ComponentParts, ComponentSender, SimpleComponent};
 
 use crate::anim;
 use crate::rows::{fill_chips, highlight_entry};
-
-pub const QUICK_TITLE: &str = "Omado — Saisie rapide";
 
 pub struct QuickAdd {
     store: Rc<Store>,
@@ -45,7 +44,8 @@ impl SimpleComponent for QuickAdd {
     type Widgets = ();
 
     fn init_root() -> gtk::Window {
-        let window = gtk::Window::builder().title(QUICK_TITLE).default_width(640).resizable(false).build();
+        let title = format!("Omado — {}", tr!("Quick entry"));
+        let window = gtk::Window::builder().title(title).default_width(640).resizable(false).build();
         window.add_css_class("omado-quick");
         window.set_decorated(false);
         window
@@ -59,8 +59,9 @@ impl SimpleComponent for QuickAdd {
         body.set_margin_start(14);
         body.set_margin_end(14);
 
-        let entry =
-            gtk::Entry::builder().placeholder_text("Appeler Paul demain 9h #perso @tel !1").hexpand(true).build();
+        // Translators: quick entry understands English and French only: keep the example in English.
+        let example = tr!("Call Paul tomorrow 9am #personal @phone !1");
+        let entry = gtk::Entry::builder().placeholder_text(example).hexpand(true).build();
         entry.add_css_class("quick-add");
         {
             let s = sender.input_sender().clone();
@@ -76,8 +77,7 @@ impl SimpleComponent for QuickAdd {
         chips.set_visible(false);
         body.append(&chips);
 
-        let status =
-            gtk::Label::builder().label("↵ ajouter · ⇧↵ ajouter et continuer · Échap fermer").xalign(0.0).build();
+        let status = gtk::Label::builder().label(tr!("↵ add · ⇧↵ add and continue · Esc close")).xalign(0.0).build();
         status.add_css_class("quick-hint");
         body.append(&status);
         window.set_child(Some(&body));
@@ -130,8 +130,11 @@ impl SimpleComponent for QuickAdd {
                 match self.store.add_quick(&text, None, now()) {
                     Ok(task) => {
                         let _ = sender.output(QuickOutput::Added);
-                        let when = task.due.map(|d| format!(" · {}", due_label(&d, now().date()))).unwrap_or_default();
-                        self.status.set_label(&format!("✓ Ajoutée : {}{when}", task.title));
+                        let mut status = tr!("✓ Added: {title}", title = task.title);
+                        if let Some(due) = task.due {
+                            status = format!("{status} · {}", due_label(&due, now().date()));
+                        }
+                        self.status.set_label(&status);
                         self.entry.set_text("");
                         self.entry.add_css_class("success");
                         self.status.add_css_class("success");
@@ -141,8 +144,8 @@ impl SimpleComponent for QuickAdd {
                             glib::timeout_add_local_once(Duration::from_millis(550), move || s.emit(QuickMsg::Close));
                         }
                     }
-                    Err(omado_core::Error::EmptyTitle) => self.status.set_label("Donnez un titre à la tâche."),
-                    Err(e) => self.status.set_label(&format!("Erreur : {e}")),
+                    Err(omado_core::Error::EmptyTitle) => self.status.set_label(tr!("Give the task a title.")),
+                    Err(e) => self.status.set_label(&tr!("Error: {error}", error = e)),
                 }
             }
             QuickMsg::Close => {

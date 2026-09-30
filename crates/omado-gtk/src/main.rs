@@ -12,7 +12,7 @@ mod theme;
 
 use std::rc::Rc;
 
-use omado_core::Store;
+use omado_core::{Store, tr};
 use relm4::RelmApp;
 use relm4::gtk::{self, gio, glib, prelude::*};
 
@@ -28,7 +28,7 @@ fn main() -> glib::ExitCode {
         glib::Char::from(b'q'),
         glib::OptionFlags::NONE,
         glib::OptionArg::None,
-        "Ouvrir la saisie rapide",
+        tr!("Open quick entry"),
         None,
     );
 
@@ -41,7 +41,7 @@ fn main() -> glib::ExitCode {
     let store = match Store::open_default() {
         Ok(s) => Rc::new(s),
         Err(e) => {
-            eprintln!("omado : impossible d'ouvrir la base : {e}");
+            eprintln!("{}", tr!("omado: couldn't open the database: {error}", error = e));
             return glib::ExitCode::FAILURE;
         }
     };

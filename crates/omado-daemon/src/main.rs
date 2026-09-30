@@ -12,7 +12,7 @@ use anyhow::{Context, Result};
 use chrono::{Duration as Delta, NaiveDateTime};
 use notify_rust::{Hint, Notification, Timeout, Urgency};
 use omado_core::human::due_label;
-use omado_core::{INBOX_ID, Priority, Store, Task, now};
+use omado_core::{INBOX_ID, Priority, Store, Task, now, tr, trc, trn};
 
 /// Identifiant de l'app : nom du fichier .desktop et de l'icône.
 const APP_ID: &str = "dev.omado.Omado";
@@ -25,11 +25,11 @@ const SNOOZE_LONG: i64 = 60;
 
 fn main() -> Result<()> {
     let once = std::env::args().any(|a| a == "--once");
-    let store = Store::open_default().context("ouverture de la base Omado")?;
-    eprintln!("omado-daemon : surveillance des rappels");
+    let store = Store::open_default().context(tr!("opening the Omado database"))?;
+    eprintln!("{}", tr!("omado-daemon: watching reminders"));
     loop {
         if let Err(e) = fire_due(&store) {
-            eprintln!("omado-daemon : {e:#}");
+            eprintln!("{}", tr!("omado-daemon: {error}", error = format!("{e:#}")));
         }
         if once {
             // Laisse le temps au serveur de notifications de recevoir les envois.
@@ -68,7 +68,7 @@ fn fire_due(store: &Store) -> Result<()> {
             .appname("Omado")
             .hint(Hint::DesktopEntry(APP_ID.into()))
             .icon(APP_ID)
-            .summary(&format!("{} autres rappels", grouped.len()))
+            .summary(&trn!("{n} more reminder", "{n} more reminders", grouped.len()))
             .body(&titles.join("\n"))
             .show()?;
         for task in grouped {
@@ -94,10 +94,10 @@ fn notify_task(task: &Task, list: Option<String>, fired_at: NaiveDateTime) -> Re
         .body(&body.join(" · "))
         .urgency(if task.priority == Priority::High { Urgency::Critical } else { Urgency::Normal })
         .timeout(Timeout::Never)
-        .action("default", "Ouvrir")
-        .action("done", "Terminé")
-        .action("snooze", &format!("+{SNOOZE_SHORT} min"))
-        .action("snooze-long", "+1 h")
+        .action("default", trc!("notification action", "Open"))
+        .action("done", trc!("notification action", "Done"))
+        .action("snooze", &tr!("+{n} min", n = SNOOZE_SHORT))
+        .action("snooze-long", &tr!("+{n} h", n = SNOOZE_LONG / 60))
         .show()?;
 
     // Chaque notification attend sa réponse dans son propre fil, avec sa connexion à la base.
@@ -110,14 +110,14 @@ fn notify_task(task: &Task, list: Option<String>, fired_at: NaiveDateTime) -> Re
                 "snooze-long" => store.snooze(id, now() + Delta::minutes(SNOOZE_LONG)),
                 "default" => {
                     if let Err(e) = Command::new("omado-gtk").spawn() {
-                        eprintln!("omado-daemon : impossible d'ouvrir Omado : {e}");
+                        eprintln!("{}", tr!("omado-daemon: couldn't open Omado: {error}", error = e));
                     }
                     Ok(())
                 }
                 _ => Ok(()),
             });
             if let Err(e) = result {
-                eprintln!("omado-daemon : action « {action} » : {e}");
+                eprintln!("{}", tr!("omado-daemon: action “{action}”: {error}", action = action, error = e));
             }
         });
     });

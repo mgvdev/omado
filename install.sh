@@ -29,7 +29,10 @@ fi
 cargo build --release --locked
 
 install -Dm755 -t "$BINDIR" "${BINS[@]/#/target/release/}"
-install -Dm644 packaging/dev.omado.Omado.desktop "$DATADIR/applications/dev.omado.Omado.desktop"
+# Le .desktop reçoit ses traductions (Name[fr]=…) depuis po/.
+mkdir -p "$DATADIR/applications"
+msgfmt --desktop --template=packaging/dev.omado.Omado.desktop.in -d po \
+  -o "$DATADIR/applications/dev.omado.Omado.desktop"
 install -Dm644 packaging/icons/dev.omado.Omado.svg "$DATADIR/icons/hicolor/scalable/apps/dev.omado.Omado.svg"
 install -Dm644 packaging/hypr/omado.lua "$DATADIR/omado/hypr/omado.lua"
 mkdir -p "$UNITDIR"

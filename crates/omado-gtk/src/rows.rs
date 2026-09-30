@@ -4,7 +4,7 @@ use std::time::Duration;
 
 use chrono::NaiveDateTime;
 use omado_core::human::due_label;
-use omado_core::{List, Parsed, Priority, Task, TaskId};
+use omado_core::{List, Parsed, Priority, Task, TaskId, tr, trc};
 use relm4::factory::{DynamicIndex, FactoryComponent, FactorySender};
 use relm4::gtk::{self, glib, pango, prelude::*};
 
@@ -106,7 +106,7 @@ impl FactoryComponent for TaskItem {
         let check = gtk::CheckButton::builder().active(task.is_completed()).valign(gtk::Align::Start).build();
         check.add_css_class("task-check");
         check.add_css_class(prio_class(task.priority));
-        check.set_tooltip_text(Some(if task.is_completed() { "Rouvrir (x)" } else { "Terminer (x)" }));
+        check.set_tooltip_text(Some(if task.is_completed() { tr!("Reopen (x)") } else { tr!("Complete (x)") }));
         let id = task.id;
         check.connect_toggled(move |b| {
             let _ = sender.output(TaskOutput::Toggle(id, b.is_active()));
@@ -146,7 +146,7 @@ impl FactoryComponent for TaskItem {
             add_meta(&due_label(due, init.now.date()), class);
         }
         if let Some(r) = &task.recurrence {
-            add_meta(&format!("↻ {}", r.describe().to_lowercase()), None);
+            add_meta(&format!("↻ {}", r.describe_inline()), None);
         }
         if let Some((done, total)) = init.progress {
             add_meta(&format!("☑ {done}/{total}"), None);
@@ -193,6 +193,16 @@ fn strike(label: &gtk::Label) {
     label.set_attributes(Some(&attrs));
 }
 
+/// « haute », « moyenne »… ; « aucune » sans priorité.
+pub fn priority_name(p: Priority) -> &'static str {
+    match p {
+        Priority::High => trc!("priority", "high"),
+        Priority::Medium => trc!("priority", "medium"),
+        Priority::Low => trc!("priority", "low"),
+        Priority::None => trc!("priority", "none"),
+    }
+}
+
 pub fn prio_class(p: Priority) -> &'static str {
     match p {
         Priority::High => "p1",
@@ -237,7 +247,7 @@ impl FactoryComponent for ListItem {
             dot.add_css_class(c);
         }
         root.append(&dot);
-        let name = gtk::Label::builder().label(&self.list.name).xalign(0.0).hexpand(true).build();
+        let name = gtk::Label::builder().label(self.list.display_name()).xalign(0.0).hexpand(true).build();
         name.set_ellipsize(pango::EllipsizeMode::End);
         root.append(&name);
         if self.count > 0 {
@@ -280,19 +290,14 @@ pub fn fill_chips(container: &gtk::Box, parsed: &Parsed, known_list: impl Fn(&st
         if known_list(list) {
             chip(&format!("#{list}"), "list");
         } else {
-            chip(&format!("#{list} · nouvelle liste"), "list").add_css_class("new");
+            chip(&format!("#{list} · {}", tr!("new list")), "list").add_css_class("new");
         }
     }
     for tag in &parsed.tags {
         chip(&format!("@{tag}"), "tag");
     }
     if let Some(n) = parsed.priority.level() {
-        let label = match n {
-            1 => "!1 haute",
-            2 => "!2 moyenne",
-            _ => "!3 basse",
-        };
-        chip(label, "priority");
+        chip(&format!("!{n} {}", priority_name(parsed.priority)), "priority");
     }
     container.set_visible(container.first_child().is_some());
 }

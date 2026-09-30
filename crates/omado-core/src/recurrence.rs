@@ -10,6 +10,9 @@ use std::str::FromStr;
 use chrono::{Datelike, Days, Months, NaiveDate, Weekday};
 use serde::{Deserialize, Serialize};
 
+use crate::i18n::capitalize;
+use crate::{tr, trc, trn};
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum Freq {
     Daily,
@@ -29,9 +32,16 @@ pub struct Recurrence {
     pub month_day: Option<u32>,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
-#[error("règle de récurrence non prise en charge : {0}")]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct RRuleError(String);
+
+impl fmt::Display for RRuleError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str(&tr!("unsupported recurrence rule: {rule}", rule = self.0))
+    }
+}
+
+impl std::error::Error for RRuleError {}
 
 impl Recurrence {
     pub fn new(freq: Freq, interval: u32) -> Self {
@@ -105,24 +115,33 @@ impl Recurrence {
         clamp_day(first.year(), first.month(), day)
     }
 
-    /// Libellé lisible, en français.
+    /// Libellé lisible : « Tous les 3 jours », « Every Monday and Thursday ».
     pub fn describe(&self) -> String {
+        capitalize(&self.describe_inline())
+    }
+
+    /// Libellé en milieu de phrase : « tous les 3 jours », « every Monday ».
+    pub fn describe_inline(&self) -> String {
         let n = self.interval;
         match self.freq {
-            Freq::Daily if n == 1 => "Tous les jours".into(),
-            Freq::Daily => format!("Tous les {n} jours"),
-            Freq::Weekly if self.weekdays.is_empty() && n == 1 => "Toutes les semaines".into(),
-            Freq::Weekly if self.weekdays.is_empty() => format!("Toutes les {n} semaines"),
-            Freq::Weekly if *self == Recurrence::weekdays_only() => "En semaine".into(),
+            Freq::Daily if n == 1 => tr!("every day").into(),
+            Freq::Daily => trn!("every {n} day", "every {n} days", n),
+            Freq::Weekly if self.weekdays.is_empty() && n == 1 => tr!("every week").into(),
+            Freq::Weekly if self.weekdays.is_empty() => trn!("every {n} week", "every {n} weeks", n),
+            Freq::Weekly if *self == Recurrence::weekdays_only() => tr!("every weekday").into(),
             Freq::Weekly => {
-                let names: Vec<&str> = self.weekdays.iter().map(|d| weekday_fr(*d)).collect();
-                let days = join_fr(&names);
-                if n == 1 { format!("Tous les {days}") } else { format!("Toutes les {n} semaines, le {days}") }
+                let days = join(self.weekdays.iter().map(|d| recurring_weekday(*d)).collect());
+                if n == 1 {
+                    // Translators: {days} is a list of weekdays from “weekday in a recurrence”, e.g. “Monday and Thursday”.
+                    tr!("every {days}", days = days)
+                } else {
+                    trn!("every {n} week on {days}", "every {n} weeks on {days}", n, days = days)
+                }
             }
-            Freq::Monthly if n == 1 => "Tous les mois".into(),
-            Freq::Monthly => format!("Tous les {n} mois"),
-            Freq::Yearly if n == 1 => "Tous les ans".into(),
-            Freq::Yearly => format!("Tous les {n} ans"),
+            Freq::Monthly if n == 1 => tr!("every month").into(),
+            Freq::Monthly => trn!("every {n} month", "every {n} months", n),
+            Freq::Yearly if n == 1 => tr!("every year").into(),
+            Freq::Yearly => trn!("every {n} year", "every {n} years", n),
         }
     }
 }
@@ -236,23 +255,29 @@ fn weekday_from_code(code: &str) -> Option<Weekday> {
     })
 }
 
-pub fn weekday_fr(d: Weekday) -> &'static str {
+/// Jour de la semaine tel qu'il s'emploie dans « tous les lundis », « every Monday ».
+fn recurring_weekday(d: Weekday) -> &'static str {
     match d {
-        Weekday::Mon => "lundis",
-        Weekday::Tue => "mardis",
-        Weekday::Wed => "mercredis",
-        Weekday::Thu => "jeudis",
-        Weekday::Fri => "vendredis",
-        Weekday::Sat => "samedis",
-        Weekday::Sun => "dimanches",
+        Weekday::Mon => trc!("weekday in a recurrence", "Monday"),
+        Weekday::Tue => trc!("weekday in a recurrence", "Tuesday"),
+        Weekday::Wed => trc!("weekday in a recurrence", "Wednesday"),
+        Weekday::Thu => trc!("weekday in a recurrence", "Thursday"),
+        Weekday::Fri => trc!("weekday in a recurrence", "Friday"),
+        Weekday::Sat => trc!("weekday in a recurrence", "Saturday"),
+        Weekday::Sun => trc!("weekday in a recurrence", "Sunday"),
     }
 }
 
-fn join_fr(items: &[&str]) -> String {
-    match items {
+/// « lundis, mercredis et vendredis ».
+fn join(items: Vec<&str>) -> String {
+    match items.as_slice() {
         [] => String::new(),
         [one] => one.to_string(),
-        [init @ .., last] => format!("{} et {last}", init.join(", ")),
+        [init @ .., last] => {
+            // Translators: separator between the first items of a list, e.g. “Monday, Wednesday and Friday”.
+            let init = init.join(trc!("list", ", "));
+            trc!("list", "{items} and {last}", items = init, last = last)
+        }
     }
 }
 
@@ -327,10 +352,49 @@ mod tests {
     }
 
     #[test]
+    fn describe_en() {
+        assert_eq!(Recurrence::new(Freq::Daily, 1).describe(), "Every day");
+        assert_eq!(Recurrence::new(Freq::Daily, 3).describe_inline(), "every 3 days");
+        assert_eq!(Recurrence::weekdays_only().describe(), "Every weekday");
+        assert_eq!(Recurrence::weekly_on(1, [Mon, Wed, Fri]).describe(), "Every Monday, Wednesday and Friday");
+        assert_eq!(Recurrence::weekly_on(2, [Mon, Thu]).describe(), "Every 2 weeks on Monday and Thursday");
+        assert_eq!(Recurrence::new(Freq::Monthly, 2).describe(), "Every 2 months");
+    }
+
+    #[test]
     fn describe_fr() {
-        assert_eq!(Recurrence::new(Freq::Daily, 1).describe(), "Tous les jours");
-        assert_eq!(Recurrence::weekdays_only().describe(), "En semaine");
-        assert_eq!(Recurrence::weekly_on(1, [Mon, Wed, Fri]).describe(), "Tous les lundis, mercredis et vendredis");
-        assert_eq!(Recurrence::new(Freq::Monthly, 2).describe(), "Tous les 2 mois");
+        crate::i18n::with_language("fr", || {
+            assert_eq!(Recurrence::new(Freq::Daily, 1).describe(), "Tous les jours");
+            assert_eq!(Recurrence::new(Freq::Daily, 3).describe_inline(), "tous les 3 jours");
+            assert_eq!(Recurrence::weekdays_only().describe(), "En semaine");
+            assert_eq!(Recurrence::weekly_on(1, [Mon, Wed, Fri]).describe(), "Tous les lundis, mercredis et vendredis");
+            assert_eq!(Recurrence::new(Freq::Monthly, 2).describe(), "Tous les 2 mois");
+        });
+    }
+
+    /// Chaque langue remplit bien ses modèles : aucun `{…}` ne reste.
+    #[test]
+    fn describe_complete_in_every_language() {
+        let samples = [
+            Recurrence::new(Freq::Daily, 1),
+            Recurrence::new(Freq::Daily, 2),
+            Recurrence::new(Freq::Daily, 5),
+            Recurrence::new(Freq::Daily, 21),
+            Recurrence::new(Freq::Weekly, 3),
+            Recurrence::weekdays_only(),
+            Recurrence::weekly_on(1, [Mon, Wed, Fri]),
+            Recurrence::weekly_on(2, [Tue, Sun]),
+            Recurrence::new(Freq::Monthly, 1),
+            Recurrence::new(Freq::Monthly, 6),
+            Recurrence::new(Freq::Yearly, 2),
+        ];
+        for code in crate::i18n::available() {
+            crate::i18n::with_language(code, || {
+                for r in &samples {
+                    let s = r.describe();
+                    assert!(!s.contains(['{', '}']) && !s.is_empty(), "{code} : « {s} »");
+                }
+            });
+        }
     }
 }
