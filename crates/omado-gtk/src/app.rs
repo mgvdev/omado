@@ -536,9 +536,6 @@ impl Component for App {
                             QuickOutput::Added => AppMsg::Refresh,
                             QuickOutput::Closed => AppMsg::QuickClosed,
                         });
-                    if let Some(app) = window.application() {
-                        app.add_window(q.widget());
-                    }
                     self.quick = Some(q);
                 }
             },

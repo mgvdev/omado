@@ -45,7 +45,14 @@ impl SimpleComponent for QuickAdd {
 
     fn init_root() -> gtk::Window {
         let title = format!("Omado — {}", tr!("Quick entry"));
-        let window = gtk::Window::builder().title(title).default_width(640).resizable(false).build();
+        // Rattachée à l'application dès sa création : sous Wayland, la classe de la fenêtre
+        // (que visent les règles Hyprland) est fixée à son affichage, `present` dans `init`.
+        let window = gtk::Window::builder()
+            .application(&relm4::main_application())
+            .title(title)
+            .default_width(640)
+            .resizable(false)
+            .build();
         window.add_css_class("omado-quick");
         window.set_decorated(false);
         window
