@@ -5,7 +5,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Omado\n"
 "Report-Msgid-Bugs-To: https://github.com/mgvdev/omado/issues\n"
-"POT-Creation-Date: 2026-09-30 14:58+0200\n"
+"POT-Creation-Date: 2026-09-30 15:08+0200\n"
 "PO-Revision-Date: 2026-09-30 14:58+0200\n"
 "Last-Translator: Omado contributors\n"
 "Language-Team: German\n"
@@ -318,6 +318,17 @@ msgctxt "day heading"
 msgid "{day} · {date}"
 msgstr "{day} · {date}"
 
+#: crates/omado-core/src/i18n.rs crates/omado-gtk/src/app.rs
+msgid "Today"
+msgstr "Heute"
+
+#: crates/omado-core/src/i18n.rs crates/omado-core/src/recurrence.rs
+#, rust-format
+msgid "every {n} day"
+msgid_plural "every {n} days"
+msgstr[0] "jeden Tag"
+msgstr[1] "alle {n} Tage"
+
 #: crates/omado-core/src/model.rs
 msgid "Inbox"
 msgstr "Eingang"
@@ -330,13 +341,6 @@ msgstr "nicht unterstützte Wiederholungsregel: {rule}"
 #: crates/omado-core/src/recurrence.rs
 msgid "every day"
 msgstr "täglich"
-
-#: crates/omado-core/src/recurrence.rs
-#, rust-format
-msgid "every {n} day"
-msgid_plural "every {n} days"
-msgstr[0] "jeden Tag"
-msgstr[1] "alle {n} Tage"
 
 #: crates/omado-core/src/recurrence.rs
 msgid "every week"
@@ -617,10 +621,6 @@ msgstr "Keine Ergebnisse"
 #: crates/omado-gtk/src/app.rs
 msgid "Try another word."
 msgstr "Versuchen Sie ein anderes Wort."
-
-#: crates/omado-gtk/src/app.rs
-msgid "Today"
-msgstr "Heute"
 
 #: crates/omado-gtk/src/app.rs
 msgid "Scheduled"

@@ -242,7 +242,9 @@ calendar > grid > label.day-number:selected {{ background: {accent}; color: {bg}
 calendar > grid > label.today {{ color: {accent}; font-weight: bold; }}
 
 /* Zone principale */
-.view-title {{ font-size: 1.9em; font-weight: bold; color: {accent}; }}
+/* Le fond, identique à celui de la fenêtre, fait repeindre tout le titre quand il change :
+   sinon un pixel d'encre hors des glyphes (point du « j ») reste à l'écran. */
+.view-title {{ font-size: 1.9em; font-weight: bold; color: {accent}; background: {bg}; }}
 .view-count {{ font-size: 1.9em; font-weight: bold; color: {muted}; }}
 entry.quick-add {{ padding: 6px 10px; min-height: 34px; font-size: 1.05em; }}
 .quick-hint {{ font-size: 0.85em; color: {muted}; }}
@@ -301,8 +303,9 @@ checkbutton.task-check:hover check:not(:checked) {{ -gtk-icon-source: -gtk-icont
 
 /* Détail */
 .detail {{ background: {side}; border-left: 1px solid {hairline}; }}
-entry.detail-title {{ font-size: 1.25em; font-weight: bold; background: transparent; border-color: transparent; }}
-entry.detail-title:focus-within {{ border-color: {accent}; }}
+textview.detail-title {{ font-size: 1.25em; font-weight: bold; background: transparent; border: 1px solid transparent; border-radius: {rs}px; padding: 4px 8px; }}
+textview.detail-title text {{ background: transparent; color: {fg}; }}
+textview.detail-title:focus-within {{ border-color: {accent}; }}
 .field-label {{ font-size: 0.8em; font-weight: bold; color: {muted}; letter-spacing: 1px; }}
 .schedule {{ color: {accent}; font-weight: bold; }}
 .schedule.overdue {{ color: {red}; }}

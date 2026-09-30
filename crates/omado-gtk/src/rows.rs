@@ -29,6 +29,8 @@ pub struct TaskInit {
 
 pub struct TaskItem {
     pub task: Task,
+    /// Affichée sous sa tâche parente.
+    pub nested: bool,
     init: Option<TaskInit>,
 }
 
@@ -65,7 +67,7 @@ impl FactoryComponent for TaskItem {
     type Index = DynamicIndex;
 
     fn init_model(init: TaskInit, _: &DynamicIndex, _: FactorySender<Self>) -> Self {
-        TaskItem { task: init.task.clone(), init: Some(init) }
+        TaskItem { task: init.task.clone(), nested: init.nested, init: Some(init) }
     }
 
     fn init_root(&self) -> gtk::Revealer {
@@ -95,8 +97,12 @@ impl FactoryComponent for TaskItem {
             content.add_css_class("fresh");
         }
         if init.fresh {
-            // Déplier une fois la ligne affichée, pour que la transition se voie.
-            revealer.connect_map(|r| r.set_reveal_child(true));
+            // Déplier à la première image où la ligne est affichée, pour que la transition
+            // se voie. Pas `connect_map` : Relm4 insère la ligne (et l'affiche) avant cet appel.
+            revealer.add_tick_callback(|r, _| {
+                r.set_reveal_child(true);
+                glib::ControlFlow::Break
+            });
         } else {
             revealer.set_transition_duration(0);
             revealer.set_reveal_child(true);

@@ -16,7 +16,7 @@ xgettext_omado() {
 # shellcheck disable=SC2046
 xgettext_omado --language=Rust --output=po/omado.pot --add-comments=Translators: \
   --keyword --keyword='tr!' --keyword='trn!:1,2' --keyword='trc!:1c,2' \
-  $(git ls-files 'crates/*.rs')
+  $(git ls-files --cached --others --exclude-standard 'crates/*.rs')
 xgettext_omado --language=Desktop --output=po/omado.pot --join-existing \
   packaging/dev.omado.Omado.desktop.in
 

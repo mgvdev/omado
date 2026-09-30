@@ -483,7 +483,8 @@ impl Store {
         self.query_tasks("t.parent_id = ?1", "t.completed_at IS NOT NULL, t.position", &[&parent.to_string()])
     }
 
-    /// Tâches d'une vue. Les vues de liste incluent les sous-tâches ; l'appelant les regroupe.
+    /// Tâches d'une vue. Les sous-tâches y figurent : les vues de liste et « Tout » les
+    /// regroupent sous leur parent, les autres les montrent par leur date ou étiquette.
     pub fn tasks(&self, view: &View, now: NaiveDateTime) -> Result<Vec<Task>> {
         let today = now.date();
         let by_due = "t.due_date, t.due_time IS NULL, t.due_time, t.priority DESC, t.position";
@@ -527,7 +528,8 @@ impl Store {
             today: count(&format!("{open} AND due_date <= ?1"), &[&today])?,
             overdue: count(&format!("{open} AND due_date < ?1"), &[&today])?,
             upcoming: count(&format!("{open} AND due_date > ?1"), &[&today])?,
-            all: count(open, &[])?,
+            // « Tout » range les sous-tâches sous leur parent : seules les tâches principales comptent.
+            all: count(&format!("{open} AND parent_id IS NULL"), &[])?,
             per_list: HashMap::new(),
         };
         let mut stmt = self.conn.prepare_cached(
@@ -709,6 +711,20 @@ mod tests {
         let c = s.counts(now()).unwrap();
         assert_eq!((c.today, c.upcoming, c.all), (1, 1, 4));
         assert_eq!(c.per_list[&INBOX_ID], 4);
+    }
+
+    /// « Tout » compte les tâches principales ; une sous-tâche datée compte dans « Aujourd'hui ».
+    #[test]
+    fn subtasks_in_counts() {
+        let s = store();
+        let parent = s.add_quick("Préparer la démo", None, now()).unwrap();
+        let sub =
+            |title: &str, due| NewTask { parent_id: Some(parent.id), title: title.into(), due, ..Default::default() };
+        s.add_task(sub("Slides", None)).unwrap();
+        s.add_task(sub("Répétition", Some(Due::on(now().date())))).unwrap();
+        let c = s.counts(now()).unwrap();
+        assert_eq!((c.today, c.all), (1, 1));
+        assert_eq!(c.per_list[&INBOX_ID], 1);
     }
 
     #[test]

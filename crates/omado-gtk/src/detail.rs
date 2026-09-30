@@ -9,7 +9,7 @@ use std::rc::Rc;
 use chrono::{Datelike, NaiveDate, NaiveTime};
 use omado_core::human::{date_label_inline, datetime_label, due_label};
 use omado_core::{Due, List, NewTask, Priority, Store, Task, TaskId, now, parse, tr};
-use relm4::gtk::{self, glib, prelude::*};
+use relm4::gtk::{self, gdk, glib, pango, prelude::*};
 use relm4::{ComponentParts, ComponentSender, RelmWidgetExt, SimpleComponent};
 
 use crate::anim;
@@ -62,7 +62,7 @@ pub enum DetailOutput {
 #[derive(Clone)]
 struct DetailWidgets {
     body: gtk::Box,
-    title: gtk::Entry,
+    title: gtk::TextView,
     schedule: gtk::Label,
     recurrence: gtk::Label,
     when: gtk::Entry,
@@ -94,6 +94,12 @@ fn field(label: &str) -> gtk::Label {
     let l = gtk::Label::builder().label(label.to_uppercase()).xalign(0.0).margin_top(14).build();
     l.add_css_class("field-label");
     l
+}
+
+/// Texte d'un champ multiligne ; un saut de ligne collé devient une espace.
+fn text_of(view: &gtk::TextView) -> String {
+    let buffer = view.buffer();
+    buffer.text(&buffer.start_iter(), &buffer.end_iter(), false).replace('\n', " ")
 }
 
 /// Enregistre à la sortie du champ.
@@ -148,17 +154,27 @@ impl SimpleComponent for Detail {
             gtk::ScrolledWindow::builder().hscrollbar_policy(gtk::PolicyType::Never).vexpand(true).child(&body).build();
         root.append(&scroller);
 
-        // Titre
-        let title = gtk::Entry::new();
+        // Titre : passe à la ligne s'il est long ; Entrée valide sans ajouter de saut de ligne.
+        let title = gtk::TextView::builder().wrap_mode(gtk::WrapMode::WordChar).accepts_tab(false).build();
         title.add_css_class("detail-title");
         {
             let send = send.clone();
-            title.connect_activate(move |e| send(DetailMsg::Title(e.text().into())));
+            let keys = gtk::EventControllerKey::new();
+            keys.connect_key_pressed(move |k, key, _, _| match key {
+                gdk::Key::Return | gdk::Key::KP_Enter => {
+                    if let Some(view) = k.widget().and_downcast::<gtk::TextView>() {
+                        send(DetailMsg::Title(text_of(&view)));
+                    }
+                    glib::Propagation::Stop
+                }
+                _ => glib::Propagation::Proceed,
+            });
+            title.add_controller(keys);
         }
         {
             let send = send.clone();
-            let e = title.clone();
-            on_leave(&title, move || send(DetailMsg::Title(e.text().into())));
+            let view = title.clone();
+            on_leave(&title, move || send(DetailMsg::Title(text_of(&view))));
         }
         body.append(&title);
 
@@ -610,8 +626,8 @@ impl Detail {
         w.filling.set(true);
         let today = now().date();
 
-        if w.title.text() != task.title {
-            w.title.set_text(&task.title);
+        if text_of(&w.title) != task.title {
+            w.title.buffer().set_text(&task.title);
         }
         match &task.due {
             Some(due) => {
@@ -677,7 +693,17 @@ impl Detail {
         }
         for sub in &self.subtasks {
             let row = gtk::Box::new(gtk::Orientation::Horizontal, 6);
-            let check = gtk::CheckButton::with_label(&sub.title);
+            // Libellé qui passe à la ligne : une longue sous-tâche n'élargit pas le panneau.
+            let label = gtk::Label::builder()
+                .label(&sub.title)
+                .wrap(true)
+                .xalign(0.0)
+                .max_width_chars(20)
+                .hexpand(true)
+                .build();
+            label.set_wrap_mode(pango::WrapMode::WordChar);
+            let check = gtk::CheckButton::new();
+            check.set_child(Some(&label));
             check.set_active(sub.is_completed());
             check.set_hexpand(true);
             check.add_css_class("task-check");

@@ -115,7 +115,7 @@ fn run() -> Result<()> {
         }
         Cmd::Ls { view, json } => {
             let view = resolve_view(&store, view.as_deref().unwrap_or("today"))?;
-            out.tasks(&store.tasks(&view, now())?, json, matches!(view, View::List(_)))?;
+            out.tasks(&store.tasks(&view, now())?, json, matches!(view, View::List(_) | View::All))?;
         }
         Cmd::Search { query, json } => {
             out.tasks(&store.tasks(&View::Search(query.join(" ")), now())?, json, false)?;

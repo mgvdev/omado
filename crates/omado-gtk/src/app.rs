@@ -943,7 +943,9 @@ impl App {
     fn refresh_tasks(&mut self, now: NaiveDateTime) {
         let tasks = self.store.tasks(&self.view, now).unwrap_or_default();
         let list_names: HashMap<ListId, &str> = self.lists.iter().map(|l| (l.id, l.display_name())).collect();
-        let nest = matches!(self.view, View::List(_));
+        // Les listes et « Tout » rangent les sous-tâches sous leur parent ; ailleurs, une
+        // sous-tâche n'apparaît que par sa propre date ou étiquette, comme une tâche.
+        let nest = matches!(self.view, View::List(_) | View::All);
         let ordered = if nest { nest_subtasks(tasks) } else { tasks.into_iter().map(|t| (t, false)).collect() };
         // Nouvelles depuis le dernier affichage de cette vue (ajout ici, CLI, annulation…).
         let same_view = self.shown_view.as_ref() == Some(&self.view);
@@ -960,8 +962,12 @@ impl App {
             guard.clear();
             for (task, nested) in ordered {
                 let is_fresh = same_view && fresh.contains(&task.id);
-                let section = section_for(&self.view, &task, now);
-                let list_name = (!nest && task.list_id != INBOX_ID)
+                // Une sous-tâche rangée sous son parent reste dans la section du parent.
+                let section = match sections.last() {
+                    Some(parent_section) if nested => Option::clone(parent_section),
+                    _ => section_for(&self.view, &task, now),
+                };
+                let list_name = (!nested && !matches!(self.view, View::List(_)) && task.list_id != INBOX_ID)
                     .then(|| list_names.get(&task.list_id).map(|n| n.to_string()))
                     .flatten();
                 let progress = if task.parent_id.is_none() {
@@ -1010,7 +1016,8 @@ impl App {
         self.count_text = match self.view {
             View::Completed | View::Search(_) => String::new(),
             _ => {
-                let open = self.tasks.iter().filter(|i| !i.task.is_completed() && i.task.parent_id.is_none()).count();
+                // Mêmes lignes que les compteurs des cartes : pas les sous-tâches rangées sous leur parent.
+                let open = self.tasks.iter().filter(|i| !i.task.is_completed() && !i.nested).count();
                 if open == 0 { String::new() } else { open.to_string() }
             }
         };
