@@ -16,6 +16,36 @@ use std::time::Duration;
 use omado_core::SpanKind;
 use relm4::gtk::{self, gdk, gio, glib, prelude::*};
 
+/// Couleurs proposées pour les listes, fixes quel que soit le thème : clé
+/// enregistrée, teinte sur fond sombre, teinte sur fond clair. `red`…`magenta`
+/// reprennent les clés des versions où la couleur venait du thème.
+pub const LIST_COLORS: [(&str, &str, &str); 19] = [
+    ("red", "#f87171", "#dc2626"),
+    ("orange", "#fb923c", "#ea580c"),
+    ("amber", "#fbbf24", "#d97706"),
+    ("yellow", "#facc15", "#ca8a04"),
+    ("lime", "#a3e635", "#65a30d"),
+    ("green", "#4ade80", "#16a34a"),
+    ("emerald", "#34d399", "#059669"),
+    ("teal", "#2dd4bf", "#0d9488"),
+    ("cyan", "#22d3ee", "#0891b2"),
+    ("sky", "#38bdf8", "#0284c7"),
+    ("blue", "#60a5fa", "#2563eb"),
+    ("indigo", "#818cf8", "#4f46e5"),
+    ("violet", "#a78bfa", "#7c3aed"),
+    ("purple", "#c084fc", "#9333ea"),
+    ("magenta", "#e879f9", "#c026d3"),
+    ("pink", "#f472b6", "#db2777"),
+    ("rose", "#fb7185", "#e11d48"),
+    ("brown", "#c8956c", "#92582d"),
+    ("slate", "#94a3b8", "#475569"),
+];
+
+/// Classe CSS d'une couleur de liste (`dot` dans la barre latérale, titre de la vue).
+pub fn list_color_class(key: &str) -> String {
+    format!("list-{key}")
+}
+
 pub struct Palette {
     dark: bool,
     accent: Rgb,
@@ -120,21 +150,6 @@ impl Palette {
         }
     }
 
-    /// Couleur d'une liste : nom de couleur du thème, sinon l'accent.
-    fn named(&self, name: &str) -> String {
-        match name {
-            "red" => self.red,
-            "orange" => self.orange,
-            "yellow" => self.yellow,
-            "green" => self.green,
-            "cyan" => self.cyan,
-            "blue" => self.blue,
-            "magenta" => self.magenta,
-            _ => self.accent,
-        }
-        .hex()
-    }
-
     pub fn css(&self) -> String {
         let fg_rgb = self.foreground;
         let fg = fg_rgb.hex();
@@ -161,14 +176,11 @@ impl Palette {
         let ease = "cubic-bezier(0.2, 0.8, 0.2, 1)";
         let r = self.radius.min(14);
         let rs = (self.radius / 2).min(8);
-        let list_colors: String = ["red", "orange", "yellow", "green", "cyan", "blue", "magenta"]
+        let list_colors: String = LIST_COLORS
             .iter()
-            .map(|c| {
-                format!(
-                    ".dot.{c} {{ background: {}; }}\n.list-title.{c} {{ color: {}; }}\n",
-                    self.named(c),
-                    self.named(c)
-                )
+            .map(|(key, on_dark, on_light)| {
+                let (class, c) = (list_color_class(key), if self.dark { on_dark } else { on_light });
+                format!(".dot.{class} {{ background: {c}; }}\n.list-title.{class} {{ color: {c}; }}\n")
             })
             .collect();
 
@@ -213,6 +225,8 @@ list.nav > row:hover {{ background: {hover}; }}
 list.nav > row:selected {{ background: {selected}; color: {fg}; }}
 .dot {{ min-width: 10px; min-height: 10px; border-radius: 999px; background: {accent}; }}
 .dot.inbox {{ background: {muted}; }}
+button.color-choice {{ padding: 5px; min-width: 0; min-height: 0; }}
+button.color-choice.selected .dot {{ box-shadow: 0 0 0 2px {bg}, 0 0 0 4px {fg}; }}
 {list_colors}
 entry.search {{ margin: 12px 10px 6px 10px; }}
 

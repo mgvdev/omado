@@ -250,7 +250,7 @@ impl FactoryComponent for ListItem {
         if self.list.is_inbox() {
             dot.add_css_class("inbox");
         } else if let Some(c) = &self.list.color {
-            dot.add_css_class(c);
+            dot.add_css_class(&theme::list_color_class(c));
         }
         root.append(&dot);
         let name = gtk::Label::builder().label(self.list.display_name()).xalign(0.0).hexpand(true).build();

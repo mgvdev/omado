@@ -18,10 +18,17 @@ use crate::quick::{QuickAdd, QuickOutput};
 use crate::rows::{
     COMPLETE_PAUSE, ListItem, TaskInit, TaskItem, TaskMsg, TaskOutput, after_collapse, fill_chips, highlight_entry,
 };
+use crate::theme::{LIST_COLORS, list_color_class};
 
 pub static BROKER: relm4::MessageBroker<AppMsg> = relm4::MessageBroker::new();
 
-const LIST_COLORS: [&str; 8] = ["accent", "red", "orange", "yellow", "green", "cyan", "blue", "magenta"];
+/// Choix de couleur d'une liste : l'accent du thème (aucune couleur enregistrée), puis la palette fixe.
+fn color_choices() -> impl Iterator<Item = &'static str> {
+    std::iter::once("accent").chain(LIST_COLORS.iter().map(|(key, _, _)| *key))
+}
+
+/// Pastilles par ligne dans le choix de couleur.
+const COLORS_PER_ROW: usize = 7;
 
 #[derive(Debug)]
 pub enum AppMsg {
@@ -89,6 +96,8 @@ pub struct App {
     quick_entry: gtk::Entry,
     search_entry: gtk::SearchEntry,
     rename_entry: gtk::Entry,
+    /// Pastilles du choix de couleur, par clé ; celle de la liste affichée est entourée.
+    color_buttons: Vec<(&'static str, gtk::Button)>,
     sections: Rc<RefCell<Vec<Option<String>>>>,
     empty_box: gtk::Box,
     empty_icon: gtk::Image,
@@ -280,7 +289,7 @@ impl Component for App {
                                             },
                                             gtk::Label { set_label: &tr!("Color").to_uppercase(), add_css_class: "field-label", set_xalign: 0.0 },
                                             #[local_ref]
-                                            colors_box -> gtk::Box { set_spacing: 6 },
+                                            colors_grid -> gtk::Grid { set_row_spacing: 2, set_column_spacing: 2 },
                                             #[local_ref]
                                             delete_list_button -> gtk::Button {
                                                 add_css_class: "flat",
@@ -417,18 +426,22 @@ impl Component for App {
         let empty_box = gtk::Box::new(gtk::Orientation::Vertical, 6);
         let empty_icon = gtk::Image::new();
         let undo_timer = gtk::Box::new(gtk::Orientation::Horizontal, 0);
-        let colors_box = gtk::Box::new(gtk::Orientation::Horizontal, 6);
-        for color in LIST_COLORS {
+        let colors_grid = gtk::Grid::new();
+        let mut color_buttons = Vec::new();
+        for (i, color) in color_choices().enumerate() {
             let b = gtk::Button::new();
             b.add_css_class("flat");
+            b.add_css_class("color-choice");
             let dot = gtk::Box::new(gtk::Orientation::Horizontal, 0);
             dot.add_css_class("dot");
-            dot.add_css_class(color);
-            dot.set_size_request(16, 16);
+            dot.add_css_class(&list_color_class(color));
+            dot.set_size_request(18, 18);
             b.set_child(Some(&dot));
             let s = sender.input_sender().clone();
             b.connect_clicked(move |_| s.emit(AppMsg::SetListColor(color)));
-            colors_box.append(&b);
+            let (row, column) = (i / COLORS_PER_ROW, i % COLORS_PER_ROW);
+            colors_grid.attach(&b, column as i32, row as i32, 1, 1);
+            color_buttons.push((color, b));
         }
         let delete_list_button = gtk::Button::with_label(tr!("Delete list…"));
         {
@@ -462,6 +475,7 @@ impl Component for App {
             quick_entry: quick_entry.clone(),
             search_entry: search_entry.clone(),
             rename_entry: rename_entry.clone(),
+            color_buttons,
             sections: Rc::default(),
             empty_box: empty_box.clone(),
             empty_icon: empty_icon.clone(),
@@ -1041,13 +1055,17 @@ impl App {
             View::Tag(tag) => format!("@{tag}"),
             View::Search(q) => tr!("“{query}”", query = q.trim()),
         };
-        for color in LIST_COLORS {
-            self.title_label.remove_css_class(color);
+        for color in color_choices() {
+            self.title_label.remove_css_class(&list_color_class(color));
         }
         self.title_label.remove_css_class("list-title");
-        if let Some(color) = current_list.and_then(|l| l.color.as_deref()) {
+        let color = current_list.and_then(|l| l.color.as_deref());
+        if let Some(color) = color {
             self.title_label.add_css_class("list-title");
-            self.title_label.add_css_class(color);
+            self.title_label.add_css_class(&list_color_class(color));
+        }
+        for (key, button) in &self.color_buttons {
+            button.set_class_active("selected", color.unwrap_or("accent") == *key);
         }
         self.list_menu = current_list.is_some_and(|l| !l.is_inbox());
         if let Some(list) = current_list
