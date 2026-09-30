@@ -1,109 +1,114 @@
 # Omado
 
-Une application de tâches pour [Omarchy](https://omarchy.org), dans l'esprit
-d'Apple Rappels et de Todoist : native (GTK4), au clavier d'abord, aux couleurs
-du thème Omarchy actif.
+A to-do app for [Omarchy](https://omarchy.org), in the spirit of Apple Reminders
+and Todoist: native (GTK4), keyboard-first, and dressed in the colors of your
+current Omarchy theme.
+
+![Omado showing today's tasks, with the detail pane open on a task that has notes and subtasks](docs/screenshot.png)
+
+> The interface is in French for now. Quick entry understands both English and
+> French.
 
 ## Installation
 
 ```sh
-./install.sh             # compile, installe dans ~/.local, active le démon de rappels
-./install.sh --uninstall # retire tout, sauf vos tâches
+./install.sh             # build, install into ~/.local, enable the reminder daemon
+./install.sh --uninstall # remove everything except your tasks
 ```
 
-Il faut Rust et GTK 4.16 ou plus (`pacman -S rust gtk4`). Pour les raccourcis
-Hyprland, ajoutez à la fin de `~/.config/hypr/hyprland.lua` :
+You need Rust and GTK 4.16 or later (`pacman -S rust gtk4`). For the Hyprland
+shortcuts, add this at the end of `~/.config/hypr/hyprland.lua`:
 
 ```lua
 dofile(os.getenv("HOME") .. "/.local/share/omado/hypr/omado.lua")
 ```
 
-Vous aurez alors **Super+R** pour la saisie rapide (fenêtre flottante, où que vous
-soyez) et **Super+Maj+R** pour ouvrir Omado.
+You then get **Super+R** for quick entry (a floating window, wherever you are)
+and **Super+Shift+R** to open Omado.
 
-## Saisie rapide
+## Quick entry
 
-Tout se tape dans le titre, en français ou en anglais :
+Everything goes in the title, in English or French:
 
 ```
-Appeler Paul demain 9h #perso @tel !1
-Sortir les poubelles tous les lundis et jeudis à 20h #maison
-Payer le loyer tous les mois le 5
-Réserver le train le 15 octobre
-Relancer le client dans 3 jours
-Pause dans 30 min
+Call Paul tomorrow 9am #personal @phone !1
+Take out the trash every monday and thursday at 8pm #home
+Stand-up every weekday at 9:30 #work
+Book the train on October 15
+Follow up with the client in 3 days
+Take a break in 30 min
 ```
 
-| Élément | Exemples |
+| Part | Examples |
 |---|---|
-| Date | `aujourd'hui`, `demain`, `après-demain`, `vendredi`, `lundi prochain`, `ce week-end`, `la semaine prochaine`, `le 15`, `15/10`, `15 octobre`, `2026-12-01`, `dans 3 jours`, `tomorrow`, `next friday`, `in 2 weeks` |
-| Heure | `9h`, `14h30`, `14:30`, `9pm`, `midi`, `ce soir`, `dans 2h`, `dans 30 min` |
-| Récurrence | `tous les jours`, `tous les 3 jours`, `chaque semaine`, `toutes les deux semaines`, `tous les lundis et jeudis`, `en semaine`, `tous les mois`, `tous les ans`, `every monday` |
-| Liste | `#courses` (créée si elle n'existe pas ; `#courses-maison` retrouve « Courses maison ») |
-| Étiquette | `@tel`, `@maison` |
-| Priorité | `!1` (haute), `!2`, `!3`, ou `p1`… `p3` |
+| Date | `today`, `tomorrow`, `friday`, `next friday`, `this weekend`, `next week`, `next month`, `Oct 15`, `15 October`, `15/10`, `2026-12-01`, `in 3 days`, `in 2 weeks` — or `demain`, `vendredi`, `le 15`… |
+| Time | `9am`, `2pm`, `14:30`, `noon`, `tonight`, `in 2h`, `in 30 min` — or `9h`, `14h30`, `midi`, `ce soir`… |
+| Repeat | `every day`, `every 3 days`, `every other week`, `every monday and thursday`, `every weekday`, `every weekend`, `monthly`, `yearly` — or `tous les lundis`, `en semaine`… |
+| List | `#groceries` (created if it doesn't exist; `#home-office` finds "Home office") |
+| Tag | `@phone`, `@home` |
+| Priority | `!1` (high), `!2`, `!3`, or `p1`… `p3` |
 
-Une heure fixe crée un rappel. Un mois seul (« mars ») n'est pas pris pour une
-date, et `#123` ou `a@b.fr` restent dans le titre.
-`omado parse "…"` montre ce qui serait compris, sans rien créer.
+A set time creates a reminder. A month on its own ("march", "may") is not taken
+for a date, and `#123` or `a@b.com` stay in the title.
+`omado parse "…"` shows what would be understood, without creating anything.
 
-## Raccourcis de l'application
+## Keyboard shortcuts
 
-| Touche | Action |
+| Key | Action |
 |---|---|
-| `n` ou `a`, `Ctrl+N` | Nouvelle tâche |
-| `/`, `Ctrl+F` | Rechercher |
-| `j` / `k` | Tâche suivante / précédente |
-| `x` | Terminer / rouvrir |
-| `e`, `Entrée`, double-clic | Ouvrir le détail |
-| `d`, `Suppr` | Supprimer |
-| `u`, `Ctrl+Z` | Annuler |
-| `Alt+↑` / `Alt+↓` | Déplacer la tâche dans sa liste |
-| `Ctrl+1` … `Ctrl+4` | Aujourd'hui, Planifié, Tout, Terminé |
-| `Échap` | Fermer le détail, vider la recherche |
+| `n` or `a`, `Ctrl+N` | New task |
+| `/`, `Ctrl+F` | Search |
+| `j` / `k` | Next / previous task |
+| `x` | Complete / reopen |
+| `e`, `Enter`, double-click | Open details |
+| `d`, `Delete` | Delete |
+| `u`, `Ctrl+Z` | Undo |
+| `Alt+↑` / `Alt+↓` | Move the task within its list |
+| `Ctrl+1` … `Ctrl+4` | Today, Scheduled, All, Completed |
+| `Esc` | Close details, clear search |
 
-Dans la saisie rapide : `Entrée` ajoute et ferme, `Maj+Entrée` ajoute et
-continue, `Échap` ferme.
+In quick entry: `Enter` adds and closes, `Shift+Enter` adds and keeps the
+window open, `Esc` closes.
 
-## En ligne de commande
+## Command line
 
 ```sh
-omado                       # ouvre l'application
-omado quick                 # la saisie rapide
-omado add "Lait demain #courses"
-omado ls                    # aujourd'hui ; aussi upcoming, all, done, inbox, #liste, @étiquette
+omado                       # open the app
+omado quick                 # quick entry
+omado add "Milk tomorrow #groceries"
+omado ls                    # today; also upcoming, all, done, inbox, #list, @tag
 omado ls all --json
-omado search dentiste
-omado done 3f2a             # le début de l'identifiant suffit
+omado search dentist
+omado done 3f2a             # the start of the ID is enough
 omado undo 3f2a
 omado rm 3f2a
 omado lists
 ```
 
-## Intégration Omarchy
+## Omarchy integration
 
-- **Thème** : les couleurs viennent de `~/.local/state/omarchy/current/theme/colors.toml`,
-  les opacités des contrôles de `shell.toml`, l'arrondi de Hyprland. Un
-  `omarchy theme set` s'applique immédiatement, sans redémarrer Omado.
-- **Police** : la police monospace du système (`omarchy font set`).
-- **Rappels** : `omado-daemon` tourne comme service utilisateur systemd et passe
-  par le centre de notifications d'Omarchy. Les notifications proposent
-  « Terminé », « +10 min » et « +1 h », et un clic ouvre Omado.
+- **Theme**: colors come from `~/.local/state/omarchy/current/theme/colors.toml`,
+  control opacities from `shell.toml`, corner rounding from Hyprland. An
+  `omarchy theme set` applies immediately, without restarting Omado.
+- **Font**: the system monospace font (`omarchy font set`).
+- **Reminders**: `omado-daemon` runs as a systemd user service and goes through
+  Omarchy's notification center. Notifications offer "Done", "+10 min" and
+  "+1 h", and clicking one opens Omado.
 
 ## Architecture
 
 ```
 crates/
-├── omado-core     modèle, SQLite, saisie rapide, récurrences (testé : cargo test)
-├── omado-cli      binaire `omado`
-├── omado-daemon   binaire `omado-daemon` : les rappels
-└── omado-gtk      binaire `omado-gtk` : l'interface GTK4 + Relm4
-packaging/         .desktop, icône, service systemd, règles Hyprland
+├── omado-core     model, SQLite, quick entry, recurrences (tested: cargo test)
+├── omado-cli      the `omado` binary
+├── omado-daemon   the `omado-daemon` binary: reminders
+└── omado-gtk      the `omado-gtk` binary: the GTK4 + Relm4 interface
+packaging/         .desktop, icon, systemd service, Hyprland rules
 ```
 
-Les tâches vivent dans `~/.local/share/omado/omado.db` (SQLite, mode WAL),
-partagée par les trois programmes. Pour faire des essais sans toucher à vos
-vraies tâches : `OMADO_DB=/tmp/essai.db omado-gtk`.
+Tasks live in `~/.local/share/omado/omado.db` (SQLite, WAL mode), shared by all
+three programs. To experiment without touching your real tasks:
+`OMADO_DB=/tmp/test.db omado-gtk`.
 
-Les récurrences sont stockées au format RRULE et les identifiants sont des UUID,
-en prévision d'une synchronisation CalDAV (VTODO).
+Recurrences are stored as RRULEs and IDs are UUIDs, in preparation for CalDAV
+(VTODO) sync.
