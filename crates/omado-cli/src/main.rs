@@ -63,7 +63,7 @@ fn command() -> clap::Command {
     Cli::command()
         .about(tr!("Omado: your tasks, in Omarchy"))
         .mut_subcommand("add", |c| {
-            // Translators: quick entry understands English and French only: keep the example in English.
+            // Translators: quick entry understands your language: translate the example so that it keeps a date, a time, a #list, a @tag and a !priority it recognizes (a test checks it).
             c.about(tr!("Add a task, in quick entry syntax: “Call Paul tomorrow 9am #personal @phone !1”"))
                 .mut_arg("list", |a| a.help(tr!("Destination list (otherwise #list in the text, or the inbox)")))
         })

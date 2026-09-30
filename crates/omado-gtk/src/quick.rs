@@ -59,7 +59,7 @@ impl SimpleComponent for QuickAdd {
         body.set_margin_start(14);
         body.set_margin_end(14);
 
-        // Translators: quick entry understands English and French only: keep the example in English.
+        // Translators: quick entry understands your language: translate the example so that it keeps a date, a time, a #list, a @tag and a !priority it recognizes (a test checks it).
         let example = tr!("Call Paul tomorrow 9am #personal @phone !1");
         let entry = gtk::Entry::builder().placeholder_text(example).hexpand(true).build();
         entry.add_css_class("quick-add");

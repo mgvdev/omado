@@ -5,8 +5,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Omado\n"
 "Report-Msgid-Bugs-To: https://github.com/mgvdev/omado/issues\n"
-"POT-Creation-Date: 2026-09-30 15:08+0200\n"
-"PO-Revision-Date: 2026-09-30 14:58+0200\n"
+"POT-Creation-Date: 2026-09-30 15:31+0200\n"
+"PO-Revision-Date: 2026-09-30 15:30+0200\n"
 "Last-Translator: Omado contributors\n"
 "Language-Team: Spanish\n"
 "Language: es\n"
@@ -19,14 +19,14 @@ msgstr ""
 msgid "Omado: your tasks, in Omarchy"
 msgstr "Omado: sus tareas, en Omarchy"
 
-#. Translators: quick entry understands English and French only: keep the example in English.
-#: crates/omado-cli/src/main.rs
+#. Translators: quick entry understands your language: translate the example so that it keeps a date, a time, a #list, a @tag and a !priority it recognizes (a test checks it).
+#: crates/omado-cli/src/main.rs crates/omado-core/src/parse/mod.rs
 msgid ""
 "Add a task, in quick entry syntax: “Call Paul tomorrow 9am #personal @phone !"
 "1”"
 msgstr ""
-"Añade una tarea con la sintaxis de entrada rápida: «Call Paul tomorrow 9am "
-"#personal @phone !1»"
+"Añade una tarea con la sintaxis de entrada rápida: «Llamar a Paul mañana a "
+"las 9 #personal @teléfono !1»"
 
 #: crates/omado-cli/src/main.rs
 msgid "Destination list (otherwise #list in the text, or the inbox)"
@@ -333,6 +333,35 @@ msgstr[1] "cada {n} días"
 msgid "Inbox"
 msgstr "Bandeja de entrada"
 
+#. Translators: quick entry understands your language: translate the example so that it keeps a date, a time, a #list, a @tag and a !priority it recognizes (a test checks it).
+#: crates/omado-core/src/parse/mod.rs crates/omado-gtk/src/quick.rs
+msgid "Call Paul tomorrow 9am #personal @phone !1"
+msgstr "Llamar a Paul mañana a las 9 #personal @teléfono !1"
+
+#. Translators: date examples that quick entry understands in your language (a test checks them).
+#: crates/omado-core/src/parse/mod.rs crates/omado-gtk/src/detail.rs
+msgid "tomorrow 9am, friday, every monday…"
+msgstr "mañana a las 9, viernes, todos los lunes…"
+
+#. Translators: quick entry understands your language: translate the example so that it keeps a date, a time, a #list, a @tag and a !priority it recognizes (a test checks it).
+#: crates/omado-core/src/parse/mod.rs crates/omado-gtk/src/app.rs
+msgid "New task… e.g. “Call Paul tomorrow 9am #personal @phone !1”  (n)"
+msgstr ""
+"Nueva tarea… p. ej. «Llamar a Paul mañana a las 9 #personal @teléfono !1»  "
+"(n)"
+
+#. Translators: date examples that quick entry understands in your language (a test checks them).
+#: crates/omado-core/src/parse/mod.rs crates/omado-gtk/src/detail.rs
+msgid "Didn't get that. Try “tomorrow 9am”, “Oct 15” or “every monday”."
+msgstr ""
+"Fecha no reconocida. Pruebe con «mañana a las 9», «15 oct» o «todos los "
+"lunes»."
+
+#. Translators: date examples that quick entry understands in your language (a test checks them).
+#: crates/omado-core/src/parse/mod.rs crates/omado-gtk/src/app.rs
+msgid "Add a date: “friday 2pm”, “Oct 15”…"
+msgstr "Añada una fecha: «viernes a las 14», «15 oct»…"
+
 #: crates/omado-core/src/recurrence.rs
 #, rust-format
 msgid "unsupported recurrence rule: {rule}"
@@ -532,11 +561,6 @@ msgstr "Renombrar"
 msgid "Color"
 msgstr "Color"
 
-#. Translators: quick entry understands English and French only: keep the example in English.
-#: crates/omado-gtk/src/app.rs
-msgid "New task… e.g. “Call Paul tomorrow 9am #personal @phone !1”  (n)"
-msgstr "Nueva tarea… p. ej. «Call Paul tomorrow 9am #personal @phone !1»  (n)"
-
 #: crates/omado-gtk/src/app.rs
 msgid "Undo (u)"
 msgstr "Deshacer (u)"
@@ -568,11 +592,6 @@ msgstr "«{title}» completada"
 #, rust-format
 msgid "“{title}” → {when}"
 msgstr "«{title}» → {when}"
-
-#. Translators: dates are understood in English and French only: keep the examples in English.
-#: crates/omado-gtk/src/app.rs
-msgid "Add a date: “friday 2pm”, “Oct 15”…"
-msgstr "Añada una fecha: «friday 2pm», «Oct 15»…"
 
 #: crates/omado-gtk/src/app.rs
 msgid "Nothing for today"
@@ -663,11 +682,6 @@ msgstr "Cerrar (Esc)"
 msgid "When"
 msgstr "Cuándo"
 
-#. Translators: dates are understood in English and French only: keep these examples in English.
-#: crates/omado-gtk/src/detail.rs
-msgid "tomorrow 9am, friday, every monday…"
-msgstr "tomorrow 9am, friday, every monday…"
-
 #: crates/omado-gtk/src/detail.rs
 msgid "Pick a date"
 msgstr "Elegir una fecha"
@@ -675,12 +689,6 @@ msgstr "Elegir una fecha"
 #: crates/omado-gtk/src/detail.rs
 msgid "Remove the due date"
 msgstr "Quitar la fecha"
-
-#. Translators: dates are understood in English and French only: keep the examples in English.
-#: crates/omado-gtk/src/detail.rs
-msgid "Didn't get that. Try “tomorrow 9am”, “Oct 15” or “every monday”."
-msgstr ""
-"Fecha no reconocida. Pruebe con «tomorrow 9am», «Oct 15» o «every monday»."
 
 #: crates/omado-gtk/src/detail.rs
 msgid "home urgent…"
@@ -740,11 +748,6 @@ msgstr "omado: no se pudo abrir la base de datos: {error}"
 #: crates/omado-gtk/src/quick.rs packaging/dev.omado.Omado.desktop.in
 msgid "Quick entry"
 msgstr "Entrada rápida"
-
-#. Translators: quick entry understands English and French only: keep the example in English.
-#: crates/omado-gtk/src/quick.rs
-msgid "Call Paul tomorrow 9am #personal @phone !1"
-msgstr "Call Paul tomorrow 9am #personal @phone !1"
 
 #: crates/omado-gtk/src/quick.rs
 msgid "↵ add · ⇧↵ add and continue · Esc close"

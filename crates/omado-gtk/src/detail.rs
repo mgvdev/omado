@@ -188,7 +188,7 @@ impl SimpleComponent for Detail {
         body.append(&recurrence);
 
         let when_row = gtk::Box::new(gtk::Orientation::Horizontal, 6);
-        // Translators: dates are understood in English and French only: keep these examples in English.
+        // Translators: date examples that quick entry understands in your language (a test checks them).
         let examples = tr!("tomorrow 9am, friday, every monday…");
         let when = gtk::Entry::builder().placeholder_text(examples).hexpand(true).build();
         {
@@ -227,7 +227,7 @@ impl SimpleComponent for Detail {
         when_row.append(&clear);
         body.append(&when_row);
         let when_error = gtk::Label::builder()
-            // Translators: dates are understood in English and French only: keep the examples in English.
+            // Translators: date examples that quick entry understands in your language (a test checks them).
             .label(tr!("Didn't get that. Try “tomorrow 9am”, “Oct 15” or “every monday”."))
             .xalign(0.0)
             .wrap(true)

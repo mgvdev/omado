@@ -8,7 +8,7 @@ current Omarchy theme.
 
 Omado speaks English, French, German, Spanish, Brazilian Portuguese, Russian,
 Simplified Chinese, Japanese, Italian and Polish, and follows your system
-language. Quick entry understands English and French.
+language — quick entry included.
 
 ## Installation
 
@@ -29,25 +29,36 @@ and **Super+Shift+R** to open Omado.
 
 ## Quick entry
 
-Everything goes in the title, in English or French:
+Everything goes in the title, in your language:
 
 ```
 Call Paul tomorrow 9am #personal @phone !1
 Take out the trash every monday and thursday at 8pm #home
-Stand-up every weekday at 9:30 #work
-Book the train on October 15
-Follow up with the client in 3 days
-Take a break in 30 min
+Pay rent every month on the 5th
+Appeler Paul demain 9h #perso @tel !1
+Müll rausbringen jeden Montag und Donnerstag um 20 Uhr
+Llamar a mamá el viernes a las 6 de la tarde
+Позвонить Павлу завтра в 9
+明天下午3点开会 #工作
+毎週月曜日と木曜日にゴミ出し
 ```
+
+English, French, Russian, Chinese and Japanese are always understood; German,
+Spanish, Italian, Portuguese and Polish when they are your interface language
+(mixing all the Latin-script languages would misread titles: Spanish "2 o 3"
+would become Polish "at 3").
 
 | Part | Examples |
 |---|---|
-| Date | `today`, `tomorrow`, `friday`, `next friday`, `this weekend`, `next week`, `next month`, `Oct 15`, `15 October`, `15/10`, `2026-12-01`, `in 3 days`, `in 2 weeks` — or `demain`, `vendredi`, `le 15`… |
-| Time | `9am`, `2pm`, `14:30`, `noon`, `tonight`, `in 2h`, `in 30 min` — or `9h`, `14h30`, `midi`, `ce soir`… |
-| Repeat | `every day`, `every 3 days`, `every other week`, `every monday and thursday`, `every weekday`, `every weekend`, `monthly`, `yearly` — or `tous les lundis`, `en semaine`… |
+| Date | `today`, `tomorrow`, `friday`, `next friday`, `this weekend`, `next week`, `next month`, `Oct 15`, `15 October`, `the 15th`, `15/10`, `15.10.`, `2026-12-01`, `in 3 days`, `in 2 weeks` |
+| Time | `9am`, `2pm`, `at 3` (afternoon), `14:30`, `noon`, `tonight`, `tomorrow morning`, `in 2h`, `in 30 min` |
+| Repeat | `every day`, `every 3 days`, `every other week`, `every monday and thursday`, `mondays`, `every weekday`, `every weekend`, `monthly`, `yearly` |
 | List | `#groceries` (created if it doesn't exist; `#home-office` finds "Home office") |
 | Tag | `@phone`, `@home` |
 | Priority | `!1` (high), `!2`, `!3`, or `p1`… `p3` |
+
+…and their equivalents in each language (`übermorgen`, `a las 9`, `tra 3 giorni`,
+`às segundas`, `через неделю`, `w poniedziałki`, `下周五`, `3日後`…).
 
 A set time creates a reminder. A month on its own ("march", "may") is not taken
 for a date, and `#123` or `a@b.com` stay in the title.

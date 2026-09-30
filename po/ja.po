@@ -5,8 +5,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Omado\n"
 "Report-Msgid-Bugs-To: https://github.com/mgvdev/omado/issues\n"
-"POT-Creation-Date: 2026-09-30 15:08+0200\n"
-"PO-Revision-Date: 2026-09-30 14:58+0200\n"
+"POT-Creation-Date: 2026-09-30 15:31+0200\n"
+"PO-Revision-Date: 2026-09-30 15:30+0200\n"
 "Last-Translator: Omado contributors\n"
 "Language-Team: Japanese\n"
 "Language: ja\n"
@@ -19,14 +19,14 @@ msgstr ""
 msgid "Omado: your tasks, in Omarchy"
 msgstr "Omado: Omarchy のタスク管理"
 
-#. Translators: quick entry understands English and French only: keep the example in English.
-#: crates/omado-cli/src/main.rs
+#. Translators: quick entry understands your language: translate the example so that it keeps a date, a time, a #list, a @tag and a !priority it recognizes (a test checks it).
+#: crates/omado-cli/src/main.rs crates/omado-core/src/parse/mod.rs
 msgid ""
 "Add a task, in quick entry syntax: “Call Paul tomorrow 9am #personal @phone !"
 "1”"
 msgstr ""
-"クイック入力の書式でタスクを追加する（例:「Call Paul tomorrow 9am #personal "
-"@phone !1」）"
+"クイック入力の書式でタスクを追加する（例:「明日の9時にポールに電話 #個人 @電"
+"話 !1」）"
 
 #: crates/omado-cli/src/main.rs
 msgid "Destination list (otherwise #list in the text, or the inbox)"
@@ -331,6 +331,33 @@ msgstr[0] "{n}日ごと"
 msgid "Inbox"
 msgstr "インボックス"
 
+#. Translators: quick entry understands your language: translate the example so that it keeps a date, a time, a #list, a @tag and a !priority it recognizes (a test checks it).
+#: crates/omado-core/src/parse/mod.rs crates/omado-gtk/src/quick.rs
+msgid "Call Paul tomorrow 9am #personal @phone !1"
+msgstr "明日の9時にポールに電話 #個人 @電話 !1"
+
+#. Translators: date examples that quick entry understands in your language (a test checks them).
+#: crates/omado-core/src/parse/mod.rs crates/omado-gtk/src/detail.rs
+msgid "tomorrow 9am, friday, every monday…"
+msgstr "明日の9時、金曜日、毎週月曜日…"
+
+#. Translators: quick entry understands your language: translate the example so that it keeps a date, a time, a #list, a @tag and a !priority it recognizes (a test checks it).
+#: crates/omado-core/src/parse/mod.rs crates/omado-gtk/src/app.rs
+msgid "New task… e.g. “Call Paul tomorrow 9am #personal @phone !1”  (n)"
+msgstr "新しいタスク… 例:「明日の9時にポールに電話 #個人 @電話 !1」  (n)"
+
+#. Translators: date examples that quick entry understands in your language (a test checks them).
+#: crates/omado-core/src/parse/mod.rs crates/omado-gtk/src/detail.rs
+msgid "Didn't get that. Try “tomorrow 9am”, “Oct 15” or “every monday”."
+msgstr ""
+"認識できませんでした。「明日の9時」「10月15日」「毎週月曜日」のように入力して"
+"みてください。"
+
+#. Translators: date examples that quick entry understands in your language (a test checks them).
+#: crates/omado-core/src/parse/mod.rs crates/omado-gtk/src/app.rs
+msgid "Add a date: “friday 2pm”, “Oct 15”…"
+msgstr "日付を追加しましょう:「金曜日の14時」「10月15日」など"
+
 #: crates/omado-core/src/recurrence.rs
 #, rust-format
 msgid "unsupported recurrence rule: {rule}"
@@ -524,11 +551,6 @@ msgstr "名前を変更"
 msgid "Color"
 msgstr "色"
 
-#. Translators: quick entry understands English and French only: keep the example in English.
-#: crates/omado-gtk/src/app.rs
-msgid "New task… e.g. “Call Paul tomorrow 9am #personal @phone !1”  (n)"
-msgstr "新しいタスク… 例:「Call Paul tomorrow 9am #personal @phone !1」  (n)"
-
 #: crates/omado-gtk/src/app.rs
 msgid "Undo (u)"
 msgstr "元に戻す (u)"
@@ -560,11 +582,6 @@ msgstr "「{title}」を完了しました"
 #, rust-format
 msgid "“{title}” → {when}"
 msgstr "「{title}」→ {when}"
-
-#. Translators: dates are understood in English and French only: keep the examples in English.
-#: crates/omado-gtk/src/app.rs
-msgid "Add a date: “friday 2pm”, “Oct 15”…"
-msgstr "日付を追加しましょう:「friday 2pm」「Oct 15」など"
 
 #: crates/omado-gtk/src/app.rs
 msgid "Nothing for today"
@@ -655,11 +672,6 @@ msgstr "閉じる (Esc)"
 msgid "When"
 msgstr "日時"
 
-#. Translators: dates are understood in English and French only: keep these examples in English.
-#: crates/omado-gtk/src/detail.rs
-msgid "tomorrow 9am, friday, every monday…"
-msgstr "tomorrow 9am, friday, every monday…"
-
 #: crates/omado-gtk/src/detail.rs
 msgid "Pick a date"
 msgstr "日付を選択"
@@ -667,13 +679,6 @@ msgstr "日付を選択"
 #: crates/omado-gtk/src/detail.rs
 msgid "Remove the due date"
 msgstr "期限を削除"
-
-#. Translators: dates are understood in English and French only: keep the examples in English.
-#: crates/omado-gtk/src/detail.rs
-msgid "Didn't get that. Try “tomorrow 9am”, “Oct 15” or “every monday”."
-msgstr ""
-"認識できませんでした。「tomorrow 9am」「Oct 15」「every monday」のように入力"
-"してみてください。"
 
 #: crates/omado-gtk/src/detail.rs
 msgid "home urgent…"
@@ -733,11 +738,6 @@ msgstr "omado: データベースを開けませんでした: {error}"
 #: crates/omado-gtk/src/quick.rs packaging/dev.omado.Omado.desktop.in
 msgid "Quick entry"
 msgstr "クイック入力"
-
-#. Translators: quick entry understands English and French only: keep the example in English.
-#: crates/omado-gtk/src/quick.rs
-msgid "Call Paul tomorrow 9am #personal @phone !1"
-msgstr "Call Paul tomorrow 9am #personal @phone !1"
 
 #: crates/omado-gtk/src/quick.rs
 msgid "↵ add · ⇧↵ add and continue · Esc close"

@@ -303,7 +303,7 @@ impl Component for App {
                             #[local_ref]
                             quick_entry -> gtk::Entry {
                                 add_css_class: "quick-add",
-                                // Translators: quick entry understands English and French only: keep the example in English.
+                                // Translators: quick entry understands your language: translate the example so that it keeps a date, a time, a #list, a @tag and a !priority it recognizes (a test checks it).
                                 set_placeholder_text: Some(tr!("New task… e.g. “Call Paul tomorrow 9am #personal @phone !1”  (n)")),
                                 connect_changed[sender] => move |e| sender.input(AppMsg::QuickChanged(e.text().into())),
                                 connect_activate[sender] => move |e| sender.input(AppMsg::QuickAdd(e.text().into())),
@@ -1016,7 +1016,7 @@ impl App {
         self.empty_icon.set_icon_name(Some(icon));
         self.empty_icon.set_class_active("done", done);
         self.shown_view = Some(self.view.clone());
-        // Translators: dates are understood in English and French only: keep the examples in English.
+        // Translators: date examples that quick entry understands in your language (a test checks them).
         let add_date = tr!("Add a date: “friday 2pm”, “Oct 15”…");
         (self.empty_title, self.empty_sub) = match &self.view {
             View::Today => (tr!("Nothing for today"), tr!("Enjoy it, or add a task above.")),

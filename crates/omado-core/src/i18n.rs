@@ -39,6 +39,11 @@ fn active() -> Option<&'static Language> {
     ACTIVE.get_or_init(|| pick(requested(|name| std::env::var(name).ok()))).as_ref()
 }
 
+/// Code de la langue de l'interface : « fr », « pt_BR »… ; « en » sans catalogue.
+pub fn language() -> &'static str {
+    active().map_or("en", |l| l.code)
+}
+
 pub fn gettext(msgid: &'static str) -> &'static str {
     lookup(None, msgid, 0).unwrap_or(msgid)
 }
@@ -233,11 +238,12 @@ thread_local! {
     static FORCED: std::cell::Cell<Option<&'static Language>> = const { std::cell::Cell::new(None) };
 }
 
-/// Exécute `f` dans la langue `code`, pour ce fil seulement.
+/// Exécute `f` dans la langue `code` (« en » : sans catalogue), pour ce fil seulement.
 #[cfg(test)]
 pub(crate) fn with_language<R>(code: &str, f: impl FnOnce() -> R) -> R {
-    let language: &'static Language = Box::leak(Box::new(load(code).expect("catalogue inconnu")));
-    FORCED.set(Some(language));
+    let language = (code != "en")
+        .then(|| &*Box::leak(Box::new(load(code).unwrap_or_else(|| panic!("catalogue inconnu : {code}")))));
+    FORCED.set(language);
     let result = f();
     FORCED.set(None);
     result
